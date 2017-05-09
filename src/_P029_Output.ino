@@ -23,7 +23,7 @@ boolean Plugin_029(byte function, struct EventStruct *event, String& string)
         Device[deviceCount].InverseLogicOption = false;
         Device[deviceCount].FormulaOption = false;
         Device[deviceCount].ValueCount = 1;
-        Device[deviceCount].SendDataOption = false;
+        Device[deviceCount].SendDataOption = true;
         break;
       }
 
