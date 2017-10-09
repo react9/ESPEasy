@@ -27,8 +27,12 @@ uint8_t Plugin_242_rainbow_max = 0;
 uint8_t Plugin_242_rainbow_stage = 0;
 
 uint8_t Plugin_242_mode = 0;
+uint8_t Plugin_242_saved_mode = 0;
+
 uint8_t Plugin_242_fade_delay = 0; // Since the minimum is 20ms, its 0ms, 20ms or greater.
 bool Plugin_242_running = 0;
+
+String name;
 
 boolean Plugin_242(byte function, struct EventStruct *event, String& string)
 {
@@ -41,7 +45,9 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
       {
         Device[++deviceCount].Number = PLUGIN_ID_242;
         Device[deviceCount].Type = DEVICE_TYPE_SINGLE;
-        Device[deviceCount].Custom = true;
+        Device[deviceCount].VType = SENSOR_TYPE_RAW;
+        Device[deviceCount].ValueCount = 1;
+        //Device[deviceCount].Custom = true;
         Device[deviceCount].TimerOption = true;
         Device[deviceCount].SendDataOption = true;
         break;
@@ -64,10 +70,6 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
         char tmpString[128];
         sprintf_P(tmpString, PSTR("<TR><TD>Led Count:<TD><input type='text' name='plugin_242_leds' size='3' value='%u'>"), Settings.TaskDevicePluginConfig[event->TaskIndex][0]);
         string += tmpString;
-
-        string += F("<TR><TD>GPIO:<TD>");
-        addPinSelect(false, string, "taskdevicepin1", Settings.TaskDevicePin1[event->TaskIndex]);
-
         success = true;
         break;
       }
@@ -86,6 +88,13 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
         {
           Plugin_242_pixels = new Adafruit_NeoPixel(Settings.TaskDevicePluginConfig[event->TaskIndex][0], Settings.TaskDevicePin1[event->TaskIndex], NEO_GRB + NEO_KHZ800);
           Plugin_242_pixels->begin(); // This initializes the NeoPixel library.
+
+          // Turn of the LED on startup.
+          Plugin_242_target_red = 0;
+          Plugin_242_target_green = 0;
+          Plugin_242_target_blue = 0;
+          Plugin_242_mode = 0;
+          Plugin_242_running = true;
         }
         success = true;
         break;
@@ -93,82 +102,99 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
 
     case PLUGIN_FIFTY_PER_SECOND:
     {
+      String log = "";
+
       if(Plugin_242_running)
       {
         switch(Plugin_242_mode)
         {
           case 0: // Fader
           {
-            if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0]))
+            SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], true);
+            Plugin_242_running = false;
+            SendState(event, 0);
+            break;
+          }
+          case 1:
+          {
+            if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
             {
               // Task completed
               Plugin_242_running = false;
-              String log = F("NeoPixel Advanced  : Task completed - ");
+              log = F("NeoPixel Advanced  : Task completed - ");
               log += Plugin_242_red;
               log += " ";
               log += Plugin_242_green;
               log += " ";
               log += Plugin_242_blue;
               addLog(LOG_LEVEL_INFO, log);
+              SendState(event, 0);
             }
             break;
           }
-          case 1: // Rainbow
+          case 2: // Rainbow
           {
             if(Plugin_242_rainbow_stage == 0) // Red
             {
               Plugin_242_target_red = Plugin_242_rainbow_max;Plugin_242_target_green = 0;Plugin_242_target_blue = 0;
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0]))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
               {
                 Plugin_242_rainbow_stage++;
+                SendState(event, 0);
               }
             }
             else if(Plugin_242_rainbow_stage == 1) // Orange
             {
               Plugin_242_target_red = Plugin_242_rainbow_max;Plugin_242_target_green = (uint8_t)(Plugin_242_rainbow_max*0.20);Plugin_242_target_blue = 0;
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0]))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
               {
                 Plugin_242_rainbow_stage++;
+                SendState(event, 0);
               }
             }
             else if(Plugin_242_rainbow_stage == 2) // Yellow
             {
               Plugin_242_target_red = Plugin_242_rainbow_max;Plugin_242_target_green = Plugin_242_rainbow_max;Plugin_242_target_blue = 0;
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0]))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
               {
                 Plugin_242_rainbow_stage++;
+                SendState(event, 0);
               }
             }
             else if(Plugin_242_rainbow_stage == 3) // Green
             {
               Plugin_242_target_red = 0;Plugin_242_target_green = Plugin_242_rainbow_max;Plugin_242_target_blue = 0;
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0]))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
               {
                 Plugin_242_rainbow_stage++;
+                SendState(event, 0);
               }
             }
             else if(Plugin_242_rainbow_stage == 4) // Blue
             {
               Plugin_242_target_red = 0;Plugin_242_target_green = 0;Plugin_242_target_blue = Plugin_242_rainbow_max;
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0]))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
               {
                 Plugin_242_rainbow_stage++;
+                SendState(event, 0);
               }
             }
             else if(Plugin_242_rainbow_stage == 5) // Purple
             {
               Plugin_242_target_red = Plugin_242_rainbow_max;Plugin_242_target_green = 0;Plugin_242_target_blue = Plugin_242_rainbow_max;
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0]))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
               {
                 Plugin_242_rainbow_stage++;
+                SendState(event, 0);
               }
             }
             else if(Plugin_242_rainbow_stage == 6) // Pink
             {
               Plugin_242_target_red = Plugin_242_rainbow_max;Plugin_242_target_green = (uint8_t)(Plugin_242_rainbow_max*.41);Plugin_242_target_blue = (uint8_t)(Plugin_242_rainbow_max*.7);
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0]))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
               {
                 Plugin_242_rainbow_stage++;
+                SendState(event, 0);
               }
             }
             else
@@ -186,72 +212,169 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
 
     case PLUGIN_WRITE:
       {
-        if (Plugin_242_pixels)
+        if (Plugin_242_pixels && event->cmd_type == 1)
         {
-          String tmpString  = string;
-          int argIndex = tmpString.indexOf(',');
-          if (argIndex)
-            tmpString = tmpString.substring(0, argIndex);
+          String log = F("MQTT: ");
+          getTaskIndexByName(event->String1);
 
-          if (tmpString.equalsIgnoreCase(F("NeoPixelAll")))
-				  {
-					  char Line[80];
-					  char TmpStr1[80];
-            int Par4 = 0;
-	  				int Par5 = 0;
-
-					  TmpStr1[0] = 0;
-					  string.toCharArray(Line, 80);
-
-		  			if (GetArgv(Line, TmpStr1, 5)) Par4 = str2int(TmpStr1);
-			  		if (GetArgv(Line, TmpStr1, 6)) Par5 = str2int(TmpStr1);
-
-            if(Par4 <= 0) Par4 = 0;
-            if(Par4 >= 30) Par4 = 30;
-
-            if(Par5 <= 0) Par5 = 0;
-            if(Par5 >= 1) Par5 = 1;
-
-            Plugin_242_fade_delay = Par4;
-            Plugin_242_mode = Par5;
-
-            Plugin_242_target_red = event->Par1;
-            Plugin_242_target_green = event->Par2;
-            Plugin_242_target_blue = event->Par3;
-
-            if(Par5 == 1)
-            {
-              Plugin_242_rainbow_stage = 0;
-              Plugin_242_rainbow_max = event->Par1;
-            }
-
-            Plugin_242_running = true;
-
-            String log = F("NeoPixel Advanced  : Task started - ");
-            log += Plugin_242_target_red;
+          if (event->String1 == ExtraTaskSettings.TaskDeviceName)
+          {
             log += " ";
-            log += Plugin_242_target_green;
+            log += event->String1;
             log += " ";
-            log += Plugin_242_target_blue;
-            log += " ";
-            log += Par4;
-            log += " ";
-            log += Par5;
-            log += " ";
+            log += event->String2;
             addLog(LOG_LEVEL_INFO, log);
 
-					  success = true;
-          }
+            StaticJsonBuffer<200> jsonBuffer;
+            JsonObject& root = jsonBuffer.parseObject(event->String2.c_str());
 
+            if (!root.success())
+            {
+                log = "NeoPixel: Failed to parse JSON string.";
+                addLog(LOG_LEVEL_INFO, log);
+                success = false;
+                break;
+            }
+
+            const char* state = root[F("state")];
+            const char* effect = root[F("effect")];
+            uint8_t brightness = root[F("brightness")];
+            uint8_t color_temp = root[F("color_temp")];
+            uint8_t r = root[F("color")][F("r")];
+            uint8_t g = root[F("color")][F("g")];
+            uint8_t b = root[F("color")][F("b")];
+            uint8_t transition = root[F("transition")];
+            uint8_t white_value = root[F("white_value")];
+
+            if(root.containsKey("color"))
+            {
+              Plugin_242_target_red = r;
+              Plugin_242_target_green = g;
+              Plugin_242_target_blue = b;
+            }
+            else if(!root.containsKey("color") && root.containsKey("brightness") && (strcasecmp_P(state, PSTR("on")) == 0))
+            {
+              Plugin_242_target_red = brightness;
+              Plugin_242_target_green = brightness;
+              Plugin_242_target_blue = brightness;
+
+              Plugin_242_rainbow_max = brightness;
+            }
+            else if(!root.containsKey("color") && (strcasecmp_P(state, PSTR("on")) == 0))
+            {
+              Plugin_242_target_red = 255;
+              Plugin_242_target_green = 255;
+              Plugin_242_target_blue = 255;
+            }
+
+            if(root.containsKey("effect"))
+            {
+              if (strcasecmp_P(effect, PSTR("normal")) == 0)
+                Plugin_242_mode = 0;
+              else if (strcasecmp_P(effect, PSTR("fade")) == 0)
+                Plugin_242_mode = 1;
+              else if (strcasecmp_P(effect, PSTR("rainbow")) == 0)
+                Plugin_242_mode = 2;
+              else
+                Plugin_242_mode = 1;
+
+              Plugin_242_saved_mode = Plugin_242_mode;
+            }
+            else
+            {
+              Plugin_242_mode = Plugin_242_saved_mode;
+            }
+
+            if (strcasecmp_P(state, PSTR("on")) == 0)
+            {
+              log = "NeoPixel: Turning light ON.";
+              log += " ";
+              log += Plugin_242_target_red;
+              log += " ";
+              log += Plugin_242_target_green;
+              log += " ";
+              log += Plugin_242_target_blue;
+              log += " ";
+              addLog(LOG_LEVEL_INFO, log);
+
+              Plugin_242_running = true;
+
+            }
+            else if (strcasecmp_P(state, PSTR("off")) == 0)
+            {
+              log = "NeoPixel: Turning light OFF.";
+              addLog(LOG_LEVEL_INFO, log);
+
+              Plugin_242_target_red = 0;
+              Plugin_242_target_green = 0;
+              Plugin_242_target_blue = 0;
+
+              if( Plugin_242_mode != 0 || Plugin_242_mode != 1)
+              {
+                Plugin_242_mode = 0;
+              }
+
+              Plugin_242_running = true;
+            }
+          }
+          success = true;
         }
         break;
       }
+  } /* switch (function) */
 
-  }
   return success;
 }
 
-boolean SetFadePixels(uint8_t r, uint8_t g, uint8_t b, uint8_t leds)
+void SendState(struct EventStruct *e, uint8_t type)
+{
+  StaticJsonBuffer<200> jsonBuffer;
+  JsonObject& root = jsonBuffer.createObject();
+  String str;
+
+  if (type == 0)
+  {
+    if (Plugin_242_red == 0 && Plugin_242_green == 0 && Plugin_242_blue == 0)
+    {
+      root[F("state")] = String(F("OFF"));
+    }
+    else if ((Plugin_242_red == Plugin_242_green && Plugin_242_red == Plugin_242_blue) &&
+            (Plugin_242_green == Plugin_242_red && Plugin_242_green == Plugin_242_blue) &&
+            (Plugin_242_blue == Plugin_242_red && Plugin_242_blue == Plugin_242_green))
+    {
+      root[F("brightness")] = String(Plugin_242_red);
+      JsonObject& color = root.createNestedObject("color");
+      color[F("r")] = String(Plugin_242_red);
+      color[F("g")] = String(Plugin_242_green);
+      color[F("b")] = String(Plugin_242_blue);
+      root[F("state")] = String(F("ON"));
+    }
+    else
+    {
+      JsonObject& color = root.createNestedObject("color");
+      color[F("r")] = String(Plugin_242_red);
+      color[F("g")] = String(Plugin_242_green);
+      color[F("b")] = String(Plugin_242_blue);
+      root[F("state")] = String(F("ON"));
+    }
+  }
+  else if (type == 1)
+  {
+    root[F("state")] = String(F("ON"));
+  }
+  else if (type == 2)
+  {
+    root[F("state")] = String(F("OFF"));
+  }
+
+  root.printTo(str);
+  strncpy(UserVarRaw[e->BaseVarIndex], str.c_str(), 512);
+  addLog(LOG_LEVEL_INFO, UserVarRaw[e->BaseVarIndex]);
+  sendData(e);
+}
+
+
+bool SetFadePixels(uint8_t r, uint8_t g, uint8_t b, uint8_t leds, bool force)
 {
 
   String log = F("NeoPixel Advanced  : Task running - ");
@@ -267,10 +390,28 @@ boolean SetFadePixels(uint8_t r, uint8_t g, uint8_t b, uint8_t leds)
   log += " | ";
   log += b;
 
-  addLog(LOG_LEVEL_DEBUG, log);
+  //addLog(LOG_LEVEL_INFO, log);
+
+  if(force) {
+    log = "NeoPixel: Forced SetFadePixels";
+    addLog(LOG_LEVEL_INFO, log);
+
+    Plugin_242_red = r;
+    Plugin_242_green = g;
+    Plugin_242_blue = b;
+
+    for (int i = 0; i < leds; i++)
+    {
+      Plugin_242_pixels->setPixelColor(i, Plugin_242_pixels->Color(r, g, b));
+    }
+    Plugin_242_pixels->show();
+    return true;
+  }
 
   if((Plugin_242_red == r) && (Plugin_242_green == g) && (Plugin_242_blue == b))
   {
+    //log = "NeoPixel: Range reached";
+    //addLog(LOG_LEVEL_INFO, log);
     return true;
   }
   else

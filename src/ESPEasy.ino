@@ -249,6 +249,7 @@
 #define SENSOR_TYPE_DIMMER                 11
 #define SENSOR_TYPE_LONG                   20
 #define SENSOR_TYPE_WIND                   21
+#define SENSOR_TYPE_RAW                    90
 
 #define VALUE_SOURCE_SYSTEM                 1
 #define VALUE_SOURCE_SERIAL                 2
@@ -471,6 +472,7 @@ struct EventStruct
   byte OriginTaskIndex;
   String String1;
   String String2;
+  byte cmd_type;
   byte *Data;
 };
 
@@ -570,6 +572,7 @@ String printWebString = "";
 boolean printToWebJSON = false;
 
 float UserVar[VARS_PER_TASK * TASKS_MAX];
+char UserVarRaw[512][TASKS_MAX];
 unsigned long RulesTimer[RULES_TIMER_MAX];
 
 unsigned long timerSensor[TASKS_MAX];

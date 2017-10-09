@@ -71,8 +71,6 @@ boolean remoteConfig(struct EventStruct *event, String& string)
   boolean success = false;
   String command = parseString(string, 1);
 
-  Serial.print("config call:");
-  Serial.println(string);
   if (command == F("config"))
   {
     success = true;
@@ -152,6 +150,9 @@ byte getValueCountFromSensorType(byte sensorType)
       break;
     case SENSOR_TYPE_QUAD:
       valueCount = 4;
+      break;
+    case SENSOR_TYPE_RAW:
+      valueCount = 1;
       break;
   }
   return valueCount;
