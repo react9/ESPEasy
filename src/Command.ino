@@ -2,7 +2,7 @@ char* ramtest;
 
 //Reads a string from a stream until a terminator-character.
 //We make sure we're not reading more than maxSize bytes and we're not busy for longer than timeout mS.
-bool safeReadStringUntil(Stream &input, String &str, char terminator, int maxSize=1024, int timeout=1000)
+bool safeReadStringUntil(Stream &input, String &str, char terminator, unsigned int maxSize=1024, unsigned int timeout=1000)
 {
     unsigned long startMillis;
     int c;
@@ -86,12 +86,7 @@ void ExecuteCommand(byte source, const char *Line)
   if (strcasecmp_P(Command, PSTR("clearRTCRAM")) == 0)
   {
     success = true;
-    RTC.factoryResetCounter = 0;
-    RTC.deepSleepState = 0;
-    RTC.rebootCounter = 0;
-    RTC.flashDayCounter = 0;
-    RTC.flashCounter = 0;
-    saveToRTC();
+    initRTC();
   }
 
   if (strcasecmp_P(Command, PSTR("notify")) == 0)
@@ -154,7 +149,7 @@ void ExecuteCommand(byte source, const char *Line)
   {
     Serial.print(lowestRAM);
     Serial.print(F(" : "));
-    Serial.println(lowestRAMid);
+    Serial.println(lowestRAMfunction);
     success = true;
   }
 
@@ -264,11 +259,19 @@ void ExecuteCommand(byte source, const char *Line)
   // commands for rules
   // ****************************************
 
+  if (strcasecmp_P(Command, PSTR("config")) == 0)
+  {
+    success = true;
+    struct EventStruct TempEvent;
+    String request = Line;
+    remoteConfig(&TempEvent, request);
+  }
+
   if (strcasecmp_P(Command, PSTR("deepSleep")) == 0)
   {
     success = true;
     if (Par1 > 0)
-      deepSleep(Par1);
+      deepSleepStart(Par1); // call the second part of the function to avoid check and enable one-shot operation
   }
 
   if (strcasecmp_P(Command, PSTR("TaskValueSet")) == 0)
@@ -277,7 +280,7 @@ void ExecuteCommand(byte source, const char *Line)
     if (GetArgv(Line, TmpStr1, 4))
     {
       float result = 0;
-      byte error = Calculate(TmpStr1, &result);
+      Calculate(TmpStr1, &result);
       UserVar[(VARS_PER_TASK * (Par1 - 1)) + Par2 - 1] = result;
     }
   }
@@ -445,7 +448,7 @@ void ExecuteCommand(byte source, const char *Line)
   if (strcasecmp_P(Command, PSTR("WifiConnect")) == 0)
   {
     success = true;
-    WifiConnect(true, 1);
+    WifiConnect(1);
   }
 
   if (strcasecmp_P(Command, PSTR("WifiDisconnect")) == 0)
@@ -453,6 +456,31 @@ void ExecuteCommand(byte source, const char *Line)
     success = true;
     WifiDisconnect();
   }
+
+  if (strcasecmp_P(Command, PSTR("WifiAPMode")) == 0)
+  {
+    WifiAPMode(true);
+    success = true;
+  }
+
+  if (strcasecmp_P(Command, PSTR("Unit")) == 0)
+  {
+    success = true;
+    Settings.Unit=Par1;
+  }
+
+  if (strcasecmp_P(Command, PSTR("Name")) == 0)
+  {
+    success = true;
+    strcpy(Settings.Name, Line + 5);
+  }
+
+  if (strcasecmp_P(Command, PSTR("Password")) == 0)
+  {
+    success = true;
+    strcpy(SecuritySettings.Password, Line + 9);
+  }
+
 
   if (strcasecmp_P(Command, PSTR("Reboot")) == 0)
   {
@@ -519,6 +547,7 @@ void ExecuteCommand(byte source, const char *Line)
     sprintf_P(str, PSTR("%u.%u.%u.%u"), ip[0], ip[1], ip[2], ip[3]);
     Serial.print(F("  IP Address    : ")); Serial.println(str);
     Serial.print(F("  Build         : ")); Serial.println((int)BUILD);
+    Serial.print(F("  Name          : ")); Serial.println(Settings.Name);
     Serial.print(F("  Unit          : ")); Serial.println((int)Settings.Unit);
     Serial.print(F("  WifiSSID      : ")); Serial.println(SecuritySettings.WifiSSID);
     Serial.print(F("  WifiKey       : ")); Serial.println(SecuritySettings.WifiKey);

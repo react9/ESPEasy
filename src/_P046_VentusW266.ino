@@ -75,7 +75,9 @@
 // CRC calculation is based on the works by Paul Stoffregen from the 1-Wire arduino library. Special
 // thanks to Greg Cook and the team behind reveng.sourceforge.net.
 
-#ifdef PLUGIN_BUILD_TESTING
+//edwin: Disabled for now: hardware is not generic enough and  uses lots of ram and iram, 
+#ifdef PLUGIN_BUILD_DISABLED
+// #ifdef PLUGIN_BUILD_TESTING
 
 #define PLUGIN_046_DEBUG            true                        // Shows recieved frames and crc in log@INFO
 
@@ -152,22 +154,8 @@ boolean Plugin_046(byte function, struct EventStruct *event, String& string)
         options[7] = F("Unknown 2, byte 16");
         options[8] = F("Unknown 3, byte 19");
 
-        int optionValues[nrchoices];
-        for (byte x = 0; x < nrchoices; x++) {
-          optionValues[x] = x;
-        }
-        string += F("<TR><TD>Plugin function:<TD><select name='plugin_046'>");
-        for (byte x = 0; x < nrchoices; x++) {
-          string += F("<option value='");
-          string += optionValues[x];
-          string += "'";
-          if (choice == optionValues[x])
-            string += F(" selected");
-          string += ">";
-          string += options[x];
-          string += F("</option>");
-        }
-        string += F("</select>");
+        addFormSelector(string, F("Plugin function"), F("plugin_046"), nrchoices, options, NULL, choice);
+
         if (choice==0) {
           string += F("<TR><TD>1st GPIO (5-MOSI):<TD>");
           addPinSelect(false, string, "taskdevicepin1", Settings.TaskDevicePluginConfig[event->TaskIndex][1]);
@@ -244,17 +232,12 @@ boolean Plugin_046(byte function, struct EventStruct *event, String& string)
 
     case PLUGIN_WEBFORM_SAVE:
       {
-        String plugin1 = WebServer.arg("plugin_046");
-        Settings.TaskDevicePluginConfig[event->TaskIndex][0] = plugin1.toInt();
-        if (plugin1.toInt()==0) {
-          String plugin2 = WebServer.arg("taskdevicepin1");
-          Settings.TaskDevicePluginConfig[event->TaskIndex][1] = plugin2.toInt();
-          String plugin3 = WebServer.arg("taskdevicepin2");
-          Settings.TaskDevicePluginConfig[event->TaskIndex][2] = plugin3.toInt();
-          String plugin4 = WebServer.arg("taskdevicepin3");
-          Settings.TaskDevicePluginConfig[event->TaskIndex][3] = plugin4.toInt();
-          String plugin5 = WebServer.arg("taskdeviceport");
-          Settings.TaskDevicePluginConfig[event->TaskIndex][4] = plugin5.toInt();
+        Settings.TaskDevicePluginConfig[event->TaskIndex][0] = getFormItemInt(F("plugin_046"));
+        if (Settings.TaskDevicePluginConfig[event->TaskIndex][0] == 0) {
+          Settings.TaskDevicePluginConfig[event->TaskIndex][1] = getFormItemInt(F("taskdevicepin1"));
+          Settings.TaskDevicePluginConfig[event->TaskIndex][2] = getFormItemInt(F("taskdevicepin2"));
+          Settings.TaskDevicePluginConfig[event->TaskIndex][3] = getFormItemInt(F("taskdevicepin3"));
+          Settings.TaskDevicePluginConfig[event->TaskIndex][4] = getFormItemInt(F("taskdeviceport"));
         }
         success = true;
         break;
@@ -327,18 +310,12 @@ boolean Plugin_046(byte function, struct EventStruct *event, String& string)
             Plugin_046_MasterSlave = false;
             Plugin_046_newData = false;
             if (PLUGIN_046_DEBUG) {
-              String log = "Ventus W266 Rcvd(";
-              log += hour();
-              log += ":";
-              if (minute() < 10) { log += "0"; }
-              log += minute();
-              log += ":";
-              if (tm.Second < 10) { log += "0"; }
-              log += tm.Second;
-              log += ") ";
+              String log = F("Ventus W266 Rcvd(");
+              log += getTimeString(':');
+              log += F(") ");
               for (int i = 0; i < Plugin_046_Payload; i++) {
                 if ((i==2)||(i==3)||(i==4)||(i==9)||(i==10)||(i==14)||(i==17)||(i==18)||(i==20)) {
-                  log += ":";
+                  log += F(":");
                 }
                 char myHex = (Plugin_046_databuffer[i] >> 4) + 0x30;
                 if (myHex > 0x39) { myHex += 7; }
@@ -347,7 +324,7 @@ boolean Plugin_046(byte function, struct EventStruct *event, String& string)
                 if (myHex > 0x39) { myHex += 7; }
                 log += myHex;
               }
-              log += " > ";
+              log += F(" > ");
               char myHex = (crc >> 4) + 0x30;
               if (myHex > 0x39) { myHex += 7; }
               log += myHex;
@@ -425,7 +402,7 @@ boolean Plugin_046(byte function, struct EventStruct *event, String& string)
             }
             case (4):
             {
-              int strikes = 0;
+              // int strikes = 0;
               int strikesnow = int((Plugin_046_databuffer[21]) * 256 + Plugin_046_databuffer[20]);
               if (wdcounter < Plugin_046_laststrikectr) { Plugin_046_laststrikectr = wdcounter; }
               if (Plugin_046_laststrikectr > (wdcounter + 10))                   // 5 min interval
