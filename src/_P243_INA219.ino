@@ -1,8 +1,8 @@
 //#######################################################################################################
-//######################### Plugin 027: INA219 DC Voltage/Current sensor ################################
+//######################### Plugin 243: INA219 DC Voltage/Current sensor ################################
 //#######################################################################################################
 
-#define Plugin_243
+#define PLUGIN_243
 #define PLUGIN_ID_243         243
 #define PLUGIN_NAME_243       "INA219 (custom)"
 #define PLUGIN_VALUENAME1_243 "Voltage"
@@ -75,7 +75,7 @@ boolean Plugin_243(byte function, struct EventStruct *event, String& string)
 
     case PLUGIN_DEVICE_ADD:
       {
-        Device[++deviceCount].Number = PLUGIN_ID_027;
+        Device[++deviceCount].Number = PLUGIN_ID_243;
         Device[deviceCount].Type = DEVICE_TYPE_I2C;
         Device[deviceCount].VType = SENSOR_TYPE_QUAD;
         Device[deviceCount].Ports = 0;
@@ -91,13 +91,13 @@ boolean Plugin_243(byte function, struct EventStruct *event, String& string)
 
     case PLUGIN_GET_DEVICENAME:
       {
-        string = F(PLUGIN_NAME_027);
+        string = F(PLUGIN_NAME_243);
         break;
       }
 
     case PLUGIN_GET_DEVICEVALUENAMES:
       {
-        strcpy_P(ExtraTaskSettings.TaskDeviceValueNames[0], PSTR(PLUGIN_VALUENAME1_027));
+        strcpy_P(ExtraTaskSettings.TaskDeviceValueNames[0], PSTR(PLUGIN_VALUENAME1_243));
         break;
       }
 
