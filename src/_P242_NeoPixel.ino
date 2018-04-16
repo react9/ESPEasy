@@ -45,7 +45,7 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
       {
         Device[++deviceCount].Number = PLUGIN_ID_242;
         Device[deviceCount].Type = DEVICE_TYPE_SINGLE;
-        Device[deviceCount].VType = SENSOR_TYPE_RAW;
+        Device[deviceCount].VType = SENSOR_TYPE_SINGLE;
         Device[deviceCount].ValueCount = 1;
         //Device[deviceCount].Custom = true;
         Device[deviceCount].TimerOption = true;
@@ -212,7 +212,11 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
 
     case PLUGIN_WRITE:
       {
-        if (Plugin_242_pixels && event->cmd_type == 1)
+        String log1 = F("P242 - PLUGIN_WRITE reached. ");
+        addLog(LOG_LEVEL_INFO, log1);
+        addLog(LOG_LEVEL_INFO, ExtraTaskSettings.TaskDeviceName);
+
+        if (Plugin_242_pixels && event->sensorType == 254)
         {
           String log = F("MQTT: ");
           getTaskIndexByName(event->String1);
@@ -342,19 +346,19 @@ void SendState(struct EventStruct *e, uint8_t type)
             (Plugin_242_green == Plugin_242_red && Plugin_242_green == Plugin_242_blue) &&
             (Plugin_242_blue == Plugin_242_red && Plugin_242_blue == Plugin_242_green))
     {
-      root[F("brightness")] = String(Plugin_242_red);
+      root[F("brightness")] = Plugin_242_red;
       JsonObject& color = root.createNestedObject("color");
-      color[F("r")] = String(Plugin_242_red);
-      color[F("g")] = String(Plugin_242_green);
-      color[F("b")] = String(Plugin_242_blue);
+      color[F("r")] = Plugin_242_red;
+      color[F("g")] = Plugin_242_green;
+      color[F("b")] = Plugin_242_blue;
       root[F("state")] = String(F("ON"));
     }
     else
     {
       JsonObject& color = root.createNestedObject("color");
-      color[F("r")] = String(Plugin_242_red);
-      color[F("g")] = String(Plugin_242_green);
-      color[F("b")] = String(Plugin_242_blue);
+      color[F("r")] = Plugin_242_red;
+      color[F("g")] = Plugin_242_green;
+      color[F("b")] = Plugin_242_blue;
       root[F("state")] = String(F("ON"));
     }
   }
@@ -368,11 +372,11 @@ void SendState(struct EventStruct *e, uint8_t type)
   }
 
   root.printTo(str);
-  strncpy(UserVarRaw[e->BaseVarIndex], str.c_str(), 512);
-  addLog(LOG_LEVEL_INFO, UserVarRaw[e->BaseVarIndex]);
+  e->String3 = str;
+  e->sensorType = 254;
+  addLog(LOG_LEVEL_INFO, e->String3);
   sendData(e);
 }
-
 
 bool SetFadePixels(uint8_t r, uint8_t g, uint8_t b, uint8_t leds, bool force)
 {
