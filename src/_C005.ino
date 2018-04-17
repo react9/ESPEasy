@@ -55,6 +55,25 @@ boolean CPlugin_005(byte function, struct EventStruct *event, String& string)
             parseCommandString(&TempEvent, cmd);
             TempEvent.Source = VALUE_SOURCE_MQTT;
             validTopic = true;
+          }
+          else if (lastPartTopic == F("mqtt_json"))
+          {
+            String tmpTopic = event->String1.substring(1);
+            String topicSplit[10];
+            int SlashIndex = tmpTopic.indexOf('/');
+            byte count = 0;
+            while (SlashIndex > 0 && count < 10 - 1)
+            {
+              topicSplit[count] = tmpTopic.substring(0, SlashIndex);
+              tmpTopic = tmpTopic.substring(SlashIndex + 1);
+              SlashIndex = tmpTopic.indexOf('/');
+              count++;
+            }
+
+            TempEvent.sensorType = 254;
+            TempEvent.String1 = topicSplit[count - 1];
+            TempEvent.String2 = event->String2;
+            validTopic = true;
           } else {
             if (lastindex > 0) {
               // Topic has at least one separator
@@ -100,26 +119,35 @@ boolean CPlugin_005(byte function, struct EventStruct *event, String& string)
 
         String value = "";
         // byte DeviceIndex = getDeviceIndex(Settings.TaskDeviceNumber[event->TaskIndex]);
-        byte valueCount = getValueCountFromSensorType(event->sensorType);
-        for (byte x = 0; x < valueCount; x++)
+
+        if(event->sensorType == 254)
         {
           String tmppubname = pubname;
-          tmppubname.replace(F("%valname%"), ExtraTaskSettings.TaskDeviceValueNames[x]);
-          if (event->sensorType == SENSOR_TYPE_LONG)
-            value = (unsigned long)UserVar[event->BaseVarIndex] + ((unsigned long)UserVar[event->BaseVarIndex + 1] << 16);
-          else
-            value = formatUserVar(event, x);
-
-          MQTTpublish(event->ControllerIndex, tmppubname.c_str(), value.c_str(), Settings.MQTTRetainFlag);
-          String log = F("MQTT : ");
-          log += tmppubname;
-          log += " ";
-          log += value;
-          addLog(LOG_LEVEL_DEBUG, log);
+          tmppubname.replace(F("%valname%"), ExtraTaskSettings.TaskDeviceValueNames[0]);
+          tmppubname += "State";
+          addLog(LOG_LEVEL_INFO, "Process custom sensor type.");
+          MQTTpublish(event->ControllerIndex, tmppubname.c_str(), event->String3.c_str(), Settings.MQTTRetainFlag);
         }
+        else
+        {
+          byte valueCount = getValueCountFromSensorType(event->sensorType);
+          for (byte x = 0; x < valueCount; x++)
+          {
+            String tmppubname = pubname;
+            tmppubname.replace(F("%valname%"), ExtraTaskSettings.TaskDeviceValueNames[x]);
+            if (event->sensorType == SENSOR_TYPE_LONG)
+              value = (unsigned long)UserVar[event->BaseVarIndex] + ((unsigned long)UserVar[event->BaseVarIndex + 1] << 16);
+            else
+              value = formatUserVar(event, x);
 
-
-
+            MQTTpublish(event->ControllerIndex, tmppubname.c_str(), value.c_str(), Settings.MQTTRetainFlag);
+            String log = F("MQTT : ");
+            log += tmppubname;
+            log += " ";
+            log += value;
+            addLog(LOG_LEVEL_DEBUG, log);
+          }
+        }
         break;
       }
   }
