@@ -40,37 +40,6 @@ boolean CPlugin_005(byte function, struct EventStruct *event, String& string)
 
     case CPLUGIN_PROTOCOL_RECV:
       {
-<<<<<<< HEAD
-        // Split topic into array
-        String tmpTopic = event->String1.substring(1);
-        String topicSplit[10];
-        int SlashIndex = tmpTopic.indexOf('/');
-        byte count = 0;
-        while (SlashIndex > 0 && count < 10 - 1)
-        {
-          topicSplit[count] = tmpTopic.substring(0, SlashIndex);
-          tmpTopic = tmpTopic.substring(SlashIndex + 1);
-          SlashIndex = tmpTopic.indexOf('/');
-          count++;
-        }
-        topicSplit[count] = tmpTopic;
-
-        String cmd = "";
-        struct EventStruct TempEvent;
-
-        if (topicSplit[count] == F("cmd"))
-        {
-          cmd = event->String2;
-          parseCommandString(&TempEvent, cmd);
-          TempEvent.Source = VALUE_SOURCE_MQTT;
-          TempEvent.cmd_type = 0;
-        }
-        else if (topicSplit[count] == F("mqtt_json"))
-        {
-          TempEvent.cmd_type = 1;
-          TempEvent.String1 = topicSplit[count - 1];
-          TempEvent.String2 = event->String2;
-=======
         byte ControllerID = findFirstEnabledControllerWithId(CPLUGIN_ID_005);
         if (ControllerID == CONTROLLER_MAX) {
           // Controller is not enabled.
@@ -108,7 +77,6 @@ boolean CPlugin_005(byte function, struct EventStruct *event, String& string)
               remoteConfig(&TempEvent, cmd);
             }
           }
->>>>>>> upstream/mega
         }
         break;
       }
@@ -140,30 +108,6 @@ boolean CPlugin_005(byte function, struct EventStruct *event, String& string)
           if (event->sensorType == SENSOR_TYPE_LONG)
             value = (unsigned long)UserVar[event->BaseVarIndex] + ((unsigned long)UserVar[event->BaseVarIndex + 1] << 16);
           else
-<<<<<<< HEAD
-            value = toString(UserVar[event->BaseVarIndex + x], ExtraTaskSettings.TaskDeviceValueDecimals[x]);
-
-          if (event->sensorType != SENSOR_TYPE_RAW)
-          {
-            MQTTclient.publish(tmppubname.c_str(), value.c_str(), Settings.MQTTRetainFlag);
-            String log = F("MQTT : ");
-            log += tmppubname;
-            log += " ";
-            log += value;
-            addLog(LOG_LEVEL_DEBUG, log);
-          }
-
-          if (event->sensorType == SENSOR_TYPE_RAW)
-          {
-            MQTTclient.publish(tmppubname.c_str(), UserVarRaw[event->BaseVarIndex], Settings.MQTTRetainFlag);
-            String log = F("MQTT : ");
-            log += tmppubname;
-            log += " ";
-            log +=  UserVarRaw[event->BaseVarIndex + x];
-            addLog(LOG_LEVEL_DEBUG, log);
-          }
-                    
-=======
             value = formatUserVar(event, x);
 
           MQTTpublish(event->ControllerIndex, tmppubname.c_str(), value.c_str(), Settings.MQTTRetainFlag);
@@ -172,7 +116,6 @@ boolean CPlugin_005(byte function, struct EventStruct *event, String& string)
           log += " ";
           log += value;
           addLog(LOG_LEVEL_DEBUG, log);
->>>>>>> upstream/mega
         }
 
 
