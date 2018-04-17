@@ -109,10 +109,10 @@
 #if defined(ESP8266)
   //enable Arduino OTA updating.
   //Note: This adds around 10kb to the firmware size, and 1kb extra ram.
-  // #define FEATURE_ARDUINO_OTA
+  #define FEATURE_ARDUINO_OTA
 
   //enable mDNS mode (adds about 6kb ram and some bytes IRAM)
-  // #define FEATURE_MDNS
+  //#define FEATURE_MDNS
 #endif
 #if defined(ESP32)
  #define FEATURE_ARDUINO_OTA
@@ -242,7 +242,7 @@
 #if defined(PLUGIN_BUILD_TESTING) || defined(PLUGIN_BUILD_DEV)
   #define DEVICES_MAX                      75
 #else
-  #define DEVICES_MAX                      50
+  #define DEVICES_MAX                      255
 #endif
 
 #if defined(ESP8266)
