@@ -1,3 +1,4 @@
+#ifdef USES_P012
 //#######################################################################################################
 //#################################### Plugin 012: LCD ##################################################
 //#######################################################################################################
@@ -7,10 +8,10 @@
 //  DS Temp:[Dallas1#Temperature#R]
 //  Lux:[Lux#Lux#R]
 //  Baro:[Baro#Pressure#R]
-
+//  Pump:[Pump#on#O] -> ON/OFF
 #include <LiquidCrystal_I2C.h>
 
-LiquidCrystal_I2C *lcd;
+LiquidCrystal_I2C *lcd=NULL;
 
 #define PLUGIN_012
 #define PLUGIN_ID_012         12
@@ -66,35 +67,46 @@ boolean Plugin_012(byte function, struct EventStruct *event, String& string)
           //options[x] = F("0x");
           //options[x] += String(optionValues[x], HEX);
         }
-        addFormSelectorI2C(string, F("plugin_012_adr"), 16, optionValues, choice);
+        addFormSelectorI2C(F("plugin_012_adr"), 16, optionValues, choice);
+
 
         byte choice2 = Settings.TaskDevicePluginConfig[event->TaskIndex][1];
         String options2[2];
         options2[0] = F("2 x 16");
         options2[1] = F("4 x 20");
         int optionValues2[2] = { 1, 2 };
-        addFormSelector(string, F("Display Size"), F("plugin_012_size"), 2, options2, optionValues2, choice2);
+        addFormSelector(F("Display Size"), F("plugin_012_size"), 2, options2, optionValues2, choice2);
+
 
         char deviceTemplate[4][80];
         LoadCustomTaskSettings(event->TaskIndex, (byte*)&deviceTemplate, sizeof(deviceTemplate));
         for (byte varNr = 0; varNr < 4; varNr++)
         {
-          string += F("<TR><TD>Line ");
-          string += varNr + 1;
-          string += F(":<TD><input type='text' size='80' maxlength='80' name='Plugin_012_template");
-          string += varNr + 1;
-          string += F("' value='");
-          string += deviceTemplate[varNr];
-          string += F("'>");
+          addHtml(F("<TR><TD>Line "));
+          addHtml(String(varNr + 1));
+          addHtml(F(":<TD><input type='text' size='80' maxlength='80' name='Plugin_012_template"));
+          addHtml(String(varNr + 1));
+          addHtml(F("' value='"));
+          addHtml(deviceTemplate[varNr]);
+          addHtml(F("'>"));
         }
 
-        string += F("<TR><TD>Display button:<TD>");
-        addPinSelect(false, string, "taskdevicepin3", Settings.TaskDevicePin3[event->TaskIndex]);
+
+        addRowLabel("Display button");
+        addPinSelect(false, "taskdevicepin3", Settings.TaskDevicePin3[event->TaskIndex]);
+
 
         char tmpString[128];
-
         sprintf_P(tmpString, PSTR("<TR><TD>Display Timeout:<TD><input type='text' name='plugin_12_timer' value='%u'>"), Settings.TaskDevicePluginConfig[event->TaskIndex][2]);
-        string += tmpString;
+        addHtml(tmpString);
+
+
+        String options3[3];
+        options3[0] = F("Continue to next line (as in v1.4)");
+        options3[1] = F("Truncate exceeding message");
+        options3[2] = F("Clear then truncate exceeding message");
+        int optionValues3[3] = { 0,1,2 };
+        addFormSelector(F("LCD command Mode"), F("plugin_012_mode"), 3, options3, optionValues3, Settings.TaskDevicePluginConfig[event->TaskIndex][3]);
 
         success = true;
         break;
@@ -105,6 +117,7 @@ boolean Plugin_012(byte function, struct EventStruct *event, String& string)
         Settings.TaskDevicePluginConfig[event->TaskIndex][0] = getFormItemInt(F("plugin_012_adr"));
         Settings.TaskDevicePluginConfig[event->TaskIndex][1] = getFormItemInt(F("plugin_012_size"));
         Settings.TaskDevicePluginConfig[event->TaskIndex][2] = getFormItemInt(F("plugin_12_timer"));
+        Settings.TaskDevicePluginConfig[event->TaskIndex][3] = getFormItemInt(F("plugin_012_mode"));
 
         char deviceTemplate[4][80];
         for (byte varNr = 0; varNr < 4; varNr++)
@@ -152,7 +165,9 @@ boolean Plugin_012(byte function, struct EventStruct *event, String& string)
         {
           if (!digitalRead(Settings.TaskDevicePin3[event->TaskIndex]))
           {
-            lcd->backlight();
+            if (lcd) {
+              lcd->backlight();
+            }
             displayTimer = Settings.TaskDevicePluginConfig[event->TaskIndex][2];
           }
         }
@@ -164,7 +179,7 @@ boolean Plugin_012(byte function, struct EventStruct *event, String& string)
         if ( displayTimer > 0)
         {
           displayTimer--;
-          if (displayTimer == 0)
+          if (lcd && displayTimer == 0)
             lcd->noBacklight();
         }
         break;
@@ -186,9 +201,9 @@ boolean Plugin_012(byte function, struct EventStruct *event, String& string)
         for (byte x = 0; x < row; x++)
         {
           String tmpString = deviceTemplate[x];
-          if (tmpString.length())
+          if (lcd && tmpString.length())
           {
-            String newString = parseTemplate(tmpString, col);
+            String newString = P012_parseTemplate(tmpString, col);
             lcd->setCursor(0, x);
             lcd->print(newString);
           }
@@ -199,29 +214,88 @@ boolean Plugin_012(byte function, struct EventStruct *event, String& string)
 
     case PLUGIN_WRITE:
       {
+        byte rows = 2;
+        byte cols = 16;
+        if (Settings.TaskDevicePluginConfig[event->TaskIndex][1] == 2){
+          rows = 4;
+          cols = 20;
+        }
+
         String tmpString  = string;
         int argIndex = tmpString.indexOf(',');
         if (argIndex)
           tmpString = tmpString.substring(0, argIndex);
-        if (tmpString.equalsIgnoreCase(F("LCD")))
+
+        if (lcd && tmpString.equalsIgnoreCase(F("LCDCMD")))
         {
           success = true;
           argIndex = string.lastIndexOf(',');
           tmpString = string.substring(argIndex + 1);
-          lcd->setCursor(event->Par2 - 1, event->Par1 - 1);
-          lcd->print(tmpString.c_str());
+          if (tmpString.equalsIgnoreCase(F("Off"))){
+              lcd->noBacklight();
+          }
+          else if (tmpString.equalsIgnoreCase(F("On"))){
+              lcd->backlight();
+          }
+          else if (tmpString.equalsIgnoreCase(F("Clear"))){
+              lcd->clear();
+          }
         }
-        if (tmpString.equalsIgnoreCase(F("LCDCMD")))
+        else if (lcd && tmpString.equalsIgnoreCase(F("LCD")))
         {
           success = true;
-          argIndex = string.lastIndexOf(',');
-          tmpString = string.substring(argIndex + 1);
-          if (tmpString.equalsIgnoreCase(F("Off")))
-            lcd->noBacklight();
-          else if (tmpString.equalsIgnoreCase(F("On")))
-            lcd->backlight();
-          else if (tmpString.equalsIgnoreCase(F("Clear")))
-            lcd->clear();
+          tmpString = P012_parseTemplate(string, cols);
+          argIndex = tmpString.lastIndexOf(',');
+          tmpString = tmpString.substring(argIndex + 1);
+
+          int colPos = event->Par2 - 1;
+          int rowPos = event->Par1 - 1;
+
+          //clear line before writing new string
+          if (Settings.TaskDevicePluginConfig[event->TaskIndex][3] == 2){
+              lcd->setCursor(colPos, rowPos);
+              for (byte i = colPos; i < cols; i++) {
+                  lcd->print(F(" "));
+              }
+          }
+
+          // truncate message exceeding cols
+          lcd->setCursor(colPos, rowPos);
+          if(Settings.TaskDevicePluginConfig[event->TaskIndex][3] == 1 || Settings.TaskDevicePluginConfig[event->TaskIndex][3] == 2){
+              lcd->setCursor(colPos, rowPos);
+              for (byte i = 0; i < cols - colPos; i++) {
+                  if(tmpString[i]){
+                     lcd->print(tmpString[i]);
+                  }
+              }
+          }
+
+          // message exceeding cols will continue to next line
+          else{
+              // Fix Weird (native) lcd display behaviour that split long string into row 1,3,2,4, instead of 1,2,3,4
+              boolean stillProcessing = 1;
+              byte charCount = 1;
+              while(stillProcessing) {
+                   if (++colPos > cols) {    // have we printed 20 characters yet (+1 for the logic)
+                        rowPos += 1;
+                        lcd->setCursor(0,rowPos);   // move cursor down
+                        colPos = 1;
+                   }
+
+                   //dont print if "lower" than the lcd
+                   if(rowPos < rows  ){
+                       lcd->print(tmpString[charCount - 1]);
+                   }
+
+                   if (!tmpString[charCount]) {   // no more chars to process?
+                        stillProcessing = 0;
+                   }
+                   charCount += 1;
+              }
+              //lcd->print(tmpString.c_str());
+              // end fix
+          }
+
         }
         break;
       }
@@ -229,3 +303,14 @@ boolean Plugin_012(byte function, struct EventStruct *event, String& string)
   }
   return success;
 }
+
+// Perform some specific changes for LCD display
+// https://www.letscontrolit.com/forum/viewtopic.php?t=2368
+String P012_parseTemplate(String &tmpString, byte lineSize) {
+  String result = parseTemplate(tmpString, lineSize);
+  const char degree[3] = {0xc2, 0xb0, 0};  // Unicode degree symbol
+  const char degree_lcd[2] = {0xdf, 0};  // P012_LCD degree symbol
+  result.replace(degree, degree_lcd);
+  return result;
+}
+#endif // USES_P012

@@ -1,3 +1,4 @@
+#ifdef USES_P016
 //#######################################################################################################
 //#################################### Plugin 016: Input IR #############################################
 //#######################################################################################################
@@ -11,7 +12,7 @@ decode_results results;
 
 #define PLUGIN_016
 #define PLUGIN_ID_016         16
-#define PLUGIN_NAME_016       "Infrared Receive - TSOP4838"
+#define PLUGIN_NAME_016       "Communication - TSOP4838"
 #define PLUGIN_VALUENAME1_016 "IR"
 
 boolean Plugin_016(byte function, struct EventStruct *event, String& string)
@@ -93,3 +94,4 @@ boolean Plugin_016(byte function, struct EventStruct *event, String& string)
 }
 
 #endif
+#endif // USES_P016

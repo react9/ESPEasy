@@ -1,3 +1,4 @@
+#ifdef USES_P064
 //#######################################################################################################
 //#################################### Plugin 064: APDS9960 Gesture ##############################
 //#######################################################################################################
@@ -18,7 +19,7 @@
 
 #define PLUGIN_064
 #define PLUGIN_ID_064         64
-#define PLUGIN_NAME_064       "Gesture - APDS9960 [DEV]"
+#define PLUGIN_NAME_064       "Gesture - APDS9960 [DEVELOPMENT]"
 #define PLUGIN_VALUENAME1_064 "Gesture"
 #define PLUGIN_VALUENAME2_064 "Proximity"
 #define PLUGIN_VALUENAME3_064 "Light"
@@ -84,7 +85,7 @@ boolean Plugin_064(byte function, struct EventStruct *event, String& string)
         byte addr = 0x39;   // CONFIG(0); chip has only 1 address
 
         int optionValues[1] = { 0x39 };
-        addFormSelectorI2C(string, F("i2c_addr"), 1, optionValues, addr);  //Only for display I2C address
+        addFormSelectorI2C(F("i2c_addr"), 1, optionValues, addr);  //Only for display I2C address
 
         success = true;
         break;
@@ -215,3 +216,4 @@ boolean Plugin_064(byte function, struct EventStruct *event, String& string)
 }
 
 #endif
+#endif // USES_P064

@@ -1,3 +1,4 @@
+#ifdef USES_P051
 //#######################################################################################################
 //#################### Plugin 051 Temperature and Humidity Sensor AM2320 ##############
 //#######################################################################################################
@@ -15,7 +16,7 @@
 
 #define PLUGIN_051
 #define PLUGIN_ID_051        51
-#define PLUGIN_NAME_051       "Environment - AM2320 [TEST]"
+#define PLUGIN_NAME_051       "Environment - AM2320 [TESTING]"
 #define PLUGIN_VALUENAME1_051 "Temperature"
 #define PLUGIN_VALUENAME2_051 "Humidity"
 
@@ -102,3 +103,4 @@ boolean Plugin_051(byte function, struct EventStruct *event, String& string)
 
 
 #endif
+#endif // USES_P051

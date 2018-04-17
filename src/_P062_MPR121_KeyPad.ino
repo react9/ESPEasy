@@ -1,3 +1,4 @@
+#ifdef USES_P062
 //#######################################################################################################
 //#################################### Plugin 062: MPR121 KeyPad ########################################
 //#######################################################################################################
@@ -18,7 +19,7 @@
 
 #define PLUGIN_062
 #define PLUGIN_ID_062         62
-#define PLUGIN_NAME_062       "KeyPad - MPR121 Touch [TESTING]"
+#define PLUGIN_NAME_062       "Keypad - MPR121 Touch [TESTING]"
 #define PLUGIN_VALUENAME1_062 "ScanCode"
 
 #include <Adafruit_MPR121.h>
@@ -70,9 +71,9 @@ boolean Plugin_062(byte function, struct EventStruct *event, String& string)
         byte addr = CONFIG(0);
 
         int optionValues[4] = { 0x5A, 0x5B, 0x5C, 0x5D };
-        addFormSelectorI2C(string, F("i2c_addr"), 4, optionValues, addr);
+        addFormSelectorI2C(F("i2c_addr"), 4, optionValues, addr);
 
-        addFormCheckBox(string, F("ScanCode"), F("scancode"), CONFIG(1));
+        addFormCheckBox(F("ScanCode"), F("scancode"), CONFIG(1));
 
         success = true;
         break;
@@ -159,3 +160,4 @@ boolean Plugin_062(byte function, struct EventStruct *event, String& string)
 }
 
 #endif
+#endif // USES_P062

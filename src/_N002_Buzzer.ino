@@ -1,3 +1,4 @@
+#ifdef USES_N002
 //#######################################################################################################
 //########################### Notification Plugin 002: Buzzer ###########################################
 //#######################################################################################################
@@ -26,29 +27,34 @@ boolean NPlugin_002(byte function, struct EventStruct *event, String& string)
         break;
       }
 
-    case NPLUGIN_WRITE:
-      {
-        String log = "";
-        String command = parseString(string, 1);
-
-        if (command == F("buzzer"))
-        {
-          NotificationSettingsStruct NotificationSettings;
-          LoadNotificationSettings(event->NotificationIndex, (byte*)&NotificationSettings, sizeof(NotificationSettings));
-          success = true;
-        }
-        break;
-      }
+    // Edwin: Not used/not implemented, so disabled for now.
+    // case NPLUGIN_WRITE:
+    //   {
+    //     String log = "";
+    //     String command = parseString(string, 1);
+    //
+    //     if (command == F("buzzer"))
+    //     {
+    //       NotificationSettingsStruct NotificationSettings;
+    //       LoadNotificationSettings(event->NotificationIndex, (byte*)&NotificationSettings, sizeof(NotificationSettings));
+    //       success = true;
+    //     }
+    //     break;
+    //   }
 
     case NPLUGIN_NOTIFY:
       {
         NotificationSettingsStruct NotificationSettings;
         LoadNotificationSettings(event->NotificationIndex, (byte*)&NotificationSettings, sizeof(NotificationSettings));
-        //this reserves IRAM and uninitalized RAM
+        //this reserves IRAM and uninitialized RAM
+        #ifndef ESP32
+        // Buzzer not compatible with ESP32 due to lack of tone command.
         tone(NotificationSettings.Pin1, 500, 500);
+        #endif
         success = true;
       }
 
   }
   return success;
 }
+#endif

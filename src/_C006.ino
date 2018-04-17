@@ -1,3 +1,4 @@
+#ifdef USES_C006
 //#######################################################################################################
 //########################### Controller Plugin 006: PiDome MQTT ########################################
 //#######################################################################################################
@@ -76,6 +77,10 @@ boolean CPlugin_006(byte function, struct EventStruct *event, String& string)
 
     case CPLUGIN_PROTOCOL_SEND:
       {
+        if (!WiFiConnected(100)) {
+          success = false;
+          break;
+        }
         ControllerSettingsStruct ControllerSettings;
         LoadControllerSettings(event->ControllerIndex, (byte*)&ControllerSettings, sizeof(ControllerSettings));
 
@@ -85,9 +90,7 @@ boolean CPlugin_006(byte function, struct EventStruct *event, String& string)
           PluginCall(PLUGIN_GET_DEVICEVALUENAMES, event, dummyString);
 
         String pubname = ControllerSettings.Publish;
-        pubname.replace(F("%sysname%"), Settings.Name);
-        pubname.replace(F("%tskname%"), ExtraTaskSettings.TaskDeviceName);
-        pubname.replace(F("%id%"), String(event->idx));
+        parseControllerVariables(pubname, event, false);
 
         String value = "";
         // byte DeviceIndex = getDeviceIndex(Settings.TaskDeviceNumber[event->TaskIndex]);
@@ -99,11 +102,12 @@ boolean CPlugin_006(byte function, struct EventStruct *event, String& string)
           if (event->sensorType == SENSOR_TYPE_LONG)
             value = (unsigned long)UserVar[event->BaseVarIndex] + ((unsigned long)UserVar[event->BaseVarIndex + 1] << 16);
           else
-            value = toString(UserVar[event->BaseVarIndex + x], ExtraTaskSettings.TaskDeviceValueDecimals[x]);
-          MQTTclient.publish(tmppubname.c_str(), value.c_str(), Settings.MQTTRetainFlag);
+            value = formatUserVar(event, x);
+          MQTTpublish(event->ControllerIndex, tmppubname.c_str(), value.c_str(), Settings.MQTTRetainFlag);
         }
         break;
       }
   }
   return success;
 }
+#endif

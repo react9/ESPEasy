@@ -1,3 +1,4 @@
+
 #ifdef CONTINUOUS_INTEGRATION
 #pragma GCC diagnostic error "-Wall"
 #else
@@ -41,7 +42,7 @@
 
 //   Simple Arduino sketch for ESP module, supporting:
 //   =================================================================================
-//   Simple switch inputs and direct GPIO output control to drive relais, mosfets, etc
+//   Simple switch inputs and direct GPIO output control to drive relays, mosfets, etc
 //   Analog input (ESP-7/12 only)
 //   Pulse counters
 //   Dallas OneWire DS18b20 temperature sensors
@@ -71,6 +72,7 @@
 //   SHT1X temperature/humidity sensors
 //   Ser2Net server
 
+<<<<<<< HEAD
 // ********************************************************************************
 //   User specific configuration
 // ********************************************************************************
@@ -343,22 +345,25 @@ DNSServer dnsServer;
 #ifdef FEATURE_MDNS
 MDNSResponder mdns;
 #endif
+=======
+// Define globals before plugin sets to allow a personal override of the selected plugins
+#include "ESPEasy-Globals.h"
+#include "define_plugin_sets.h"
+>>>>>>> upstream/mega
 
-// MQTT client
-WiFiClient mqtt;
-PubSubClient MQTTclient(mqtt);
+// Blynk_get prototype
+boolean Blynk_get(const String& command, byte controllerIndex,float *data = NULL );
 
-// WebServer
-ESP8266WebServer WebServer(80);
-
-// udp protocol stuff (syslog, global sync, node info list, ntp time)
-WiFiUDP portUDP;
-
-
-
-extern "C" {
-#include "spi_flash.h"
+int firstEnabledBlynkController() {
+  for (byte i = 0; i < CONTROLLER_MAX; ++i) {
+    byte ProtocolIndex = getProtocolIndex(Settings.Protocol[i]);
+    if (Protocol[ProtocolIndex].Number == 12 && Settings.ControllerEnabled[i]) {
+      return i;
+    }
+  }
+  return -1;
 }
+<<<<<<< HEAD
 extern "C" uint32_t _SPIFFS_start;
 extern "C" uint32_t _SPIFFS_end;
 extern "C" uint32_t _SPIFFS_page;
@@ -668,12 +673,24 @@ String eventBuffer = "";
 
 uint16_t lowestRAM = 0;
 String lowestRAMfunction = "";
+=======
+
+//void checkRAM( const __FlashStringHelper* flashString);
+>>>>>>> upstream/mega
 
 /*********************************************************************************************\
  * SETUP
 \*********************************************************************************************/
 void setup()
 {
+  WiFi.persistent(false); // Do not use SDK storage of SSID/WPA parameters
+  WiFi.setAutoReconnect(false);
+
+  checkRAM(F("setup"));
+  #if defined(ESP32)
+    for(byte x = 0; x < 16; x++)
+      ledChannelPin[x] = -1;
+  #endif
 
   lowestRAM = FreeMem();
 
@@ -681,7 +698,18 @@ void setup()
   // Serial.print("\n\n\nBOOOTTT\n\n\n");
 
   initLog();
+  setWifiMode(WIFI_STA);
 
+#if defined(ESP32)
+  WiFi.onEvent((WiFiEventFullCb)WiFiEvent);
+#else
+  // WiFi event handlers
+  stationConnectedHandler = WiFi.onStationModeConnected(onConnected);
+	stationDisconnectedHandler = WiFi.onStationModeDisconnected(onDisconnect);
+	stationGotIpHandler = WiFi.onStationModeGotIP(onGotIP);
+  APModeStationConnectedHandler = WiFi.onSoftAPModeStationConnected(onConnectedAPmode);
+  APModeStationDisconnectedHandler = WiFi.onSoftAPModeStationDisconnected(onDisonnectedAPmode);
+#endif
 
   if (SpiffsSectors() < 32)
   {
@@ -694,6 +722,11 @@ void setup()
 
   String log = F("\n\n\rINIT : Booting version: ");
   log += BUILD_GIT;
+  #if defined(ESP8266)
+     log += F(" (core ");
+     log += ESP.getCoreVersion();
+     log += F(")");
+  #endif
   addLog(LOG_LEVEL_INFO, log);
 
 
@@ -730,14 +763,10 @@ void setup()
 
   addLog(LOG_LEVEL_INFO, log);
 
-
-
-
   fileSystemCheck();
+  progMemMD5check();
   LoadSettings();
-
-  if (strcasecmp(SecuritySettings.WifiSSID, "ssid") == 0)
-    wifiSetup = true;
+  checkRuleSets();
 
   ExtraTaskSettings.TaskIndex = 255; // make sure this is an unused nr to prevent cache load on boot
 
@@ -760,6 +789,7 @@ void setup()
     //make sure previous serial buffers are flushed before resetting baudrate
     Serial.flush();
     Serial.begin(Settings.BaudRate);
+//    Serial.setDebugOutput(true);
   }
 
   if (Settings.Build != BUILD)
@@ -773,30 +803,8 @@ void setup()
   if (Settings.UseSerial && Settings.SerialLogLevel >= LOG_LEVEL_DEBUG_MORE)
     Serial.setDebugOutput(true);
 
+  checkRAM(F("hardwareInit"));
   hardwareInit();
-
-  WiFi.persistent(false); // Do not use SDK storage of SSID/WPA parameters
-  WifiAPconfig();
-
-  if (Settings.deepSleep)
-  {
-    //only one attempt in deepsleep, to conserve battery
-    if (!WifiConnect(1))
-    {
-        if (Settings.deepSleepOnFail)
-        {
-          addLog(LOG_LEVEL_ERROR, F("SLEEP: Connection failed, going back to sleep."));
-          deepSleep(Settings.Delay);
-        }
-    }
-  }
-  else
-    // 3 connect attempts
-    WifiConnect(3);
-
-  #ifdef FEATURE_REPORTING
-  ReportStatus();
-  #endif
 
   //After booting, we want all the tasks to run without delaying more than neccesary.
   //Plugins that need an initial startup delay need to overwrite their initial timerSensor value in PLUGIN_INIT
@@ -808,10 +816,57 @@ void setup()
   timer100ms = 0; // timer for periodic actions 10 x per/sec
   timer1s = 0; // timer for periodic actions once per/sec
   timerwd = 0; // timer for watchdog once per 30 sec
+  timermqtt = 10000; // Timer for the MQTT keep alive loop, initial value can be high, since it will be set as soon as IP is set.
+  timermqtt_interval = 250; // Interval for checking MQTT
+  timerAwakeFromDeepSleep = millis();
 
   PluginInit();
   CPluginInit();
   NPluginInit();
+  log = F("INFO : Plugins: ");
+  log += deviceCount + 1;
+ #ifdef PLUGIN_BUILD_NORMAL
+    log += F(" [Normal]");
+ #endif
+ #ifdef PLUGIN_BUILD_TESTING
+    log += F(" [Testing]");
+ #endif
+ #ifdef PLUGIN_BUILD_DEV
+    log += F(" [Development]");
+ #endif
+ #if defined(ESP8266)
+    log += F(" (core ");
+    log += ESP.getCoreVersion();
+    log += F(")");
+ #endif
+  addLog(LOG_LEVEL_INFO, log);
+
+  if (deviceCount + 1 >= PLUGIN_MAX) {
+    addLog(LOG_LEVEL_ERROR, F("Programming error! - Increase PLUGIN_MAX"));
+  }
+
+  if (Settings.UseRules)
+  {
+    String event = F("System#Wake");
+    rulesProcessing(event);
+  }
+
+  if (!selectValidWiFiSettings()) {
+    wifiSetup = true;
+  }
+/*
+  // FIXME TD-er:
+  // Async scanning for wifi doesn't work yet like it should.
+  // So no selection of strongest network yet.
+  if (selectValidWiFiSettings()) {
+    WifiScanAsync();
+  }
+*/
+  setWifiState(WifiTryConnect);
+
+  #ifdef FEATURE_REPORTING
+  ReportStatus();
+  #endif
 
   WebServerInit();
 
@@ -823,11 +878,6 @@ void setup()
   if (Settings.UDPPort != 0)
     portUDP.begin(Settings.UDPPort);
 
-  // Setup MQTT Client
-  byte ProtocolIndex = getProtocolIndex(Settings.Protocol[0]);
-  if (Protocol[ProtocolIndex].usesMQTT && Settings.ControllerEnabled[0])
-    MQTTConnect();
-
   sendSysInfoUDP(3);
 
   if (Settings.UseNTP)
@@ -837,12 +887,6 @@ void setup()
   vcc = ESP.getVcc() / 1000.0;
 #endif
 
-  // Start DNS, only used if the ESP has no valid WiFi config
-  // It will reply with it's own address on all DNS requests
-  // (captive portal concept)
-  if (wifiSetup)
-    dnsServer.start(DNS_PORT, "*", apIP);
-
   if (Settings.UseRules)
   {
     String event = F("System#Boot");
@@ -851,54 +895,190 @@ void setup()
 
   writeDefaultCSS();
 
+  UseRTOSMultitasking = Settings.UseRTOSMultitasking;
+  #ifdef USE_RTOS_MULTITASKING
+    if(UseRTOSMultitasking){
+      log = F("RTOS : Launching tasks");
+      addLog(LOG_LEVEL_INFO, log);
+      xTaskCreatePinnedToCore(RTOS_TaskServers, "RTOS_TaskServers", 8192, NULL, 1, NULL, 1);
+      xTaskCreatePinnedToCore(RTOS_TaskSerial, "RTOS_TaskSerial", 8192, NULL, 1, NULL, 1);
+      xTaskCreatePinnedToCore(RTOS_Task10ps, "RTOS_Task10ps", 8192, NULL, 1, NULL, 1);
+    }
+  #endif
+
 }
 
+#ifdef USE_RTOS_MULTITASKING
+void RTOS_TaskServers( void * parameter )
+{
+ while (true){
+  delay(100);
+  WebServer.handleClient();
+  checkUDP();
+ }
+}
+
+void RTOS_TaskSerial( void * parameter )
+{
+ while (true){
+    delay(100);
+    if (Settings.UseSerial)
+    if (Serial.available())
+      if (!PluginCall(PLUGIN_SERIAL_IN, 0, dummyString))
+        serial();
+ }
+}
+
+void RTOS_Task10ps( void * parameter )
+{
+ while (true){
+    delay(100);
+    run10TimesPerSecond();
+ }
+}
+#endif
+
+int firstEnabledMQTTController() {
+  for (byte i = 0; i < CONTROLLER_MAX; ++i) {
+    byte ProtocolIndex = getProtocolIndex(Settings.Protocol[i]);
+    if (Protocol[ProtocolIndex].usesMQTT && Settings.ControllerEnabled[i]) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+bool getControllerProtocolDisplayName(byte ProtocolIndex, byte parameterIdx, String& protoDisplayName) {
+  EventStruct tmpEvent;
+  tmpEvent.idx=parameterIdx;
+  return CPlugin_ptr[ProtocolIndex](CPLUGIN_GET_PROTOCOL_DISPLAY_NAME, &tmpEvent, protoDisplayName);
+}
 
 /*********************************************************************************************\
  * MAIN LOOP
 \*********************************************************************************************/
 void loop()
 {
+  //checkRAM(F("loop"));
   loopCounter++;
 
   if (wifiSetupConnect)
   {
     // try to connect for setup wizard
-    WifiConnect(1);
+    setWifiState(WifiCredentialsChanged);
     wifiSetupConnect = false;
   }
+  if (wifiStatus != ESPEASY_WIFI_SERVICES_INITIALIZED) {
+    if (wifiStatus >= ESPEASY_WIFI_CONNECTED) processConnect();
+    if (wifiStatus >= ESPEASY_WIFI_GOT_IP) processGotIP();
+    if (wifiStatus == ESPEASY_WIFI_DISCONNECTED) processDisconnect();
+  } else if (WiFi.status() != WL_CONNECTED) {
+    // Somehow the WiFi has entered a limbo state.
+    // FIXME TD-er: This may happen on WiFi config with AP_STA mode active.
+//    addLog(LOG_LEVEL_ERROR, F("Wifi status out sync"));
+//    resetWiFi();
+  }
+  if (!processedConnectAPmode) processConnectAPmode();
+  if (!processedDisconnectAPmode) processDisconnectAPmode();
+  if (!processedScanDone) processScanDone();
 
+  bool firstLoopWiFiConnected = wifiStatus == ESPEASY_WIFI_SERVICES_INITIALIZED && firstLoop;
+  if (firstLoopWiFiConnected) {
+     firstLoop = false;
+     timerAwakeFromDeepSleep = millis(); // Allow to run for "awake" number of seconds, now we have wifi.
+   }
 
-  // Deep sleep mode, just run all tasks one time and go back to sleep as fast as possible
-  if (isDeepSleepEnabled())
+  // Deep sleep mode, just run all tasks one (more) time and go back to sleep as fast as possible
+  if ((firstLoopWiFiConnected || readyForSleep()) && isDeepSleepEnabled())
   {
+      runPeriodicalMQTT();
+      // Now run all frequent tasks
       run50TimesPerSecond();
       run10TimesPerSecond();
       runEach30Seconds();
       runOncePerSecond();
-      deepSleep(Settings.Delay);
-      //deepsleep will never return, its a special kind of reboot
   }
   //normal mode, run each task when its time
   else
   {
 
-    if (millis() > timer20ms)
+    if (timeOutReached(timer20ms))
       run50TimesPerSecond();
 
-    if (millis() > timer100ms)
-      run10TimesPerSecond();
+    if (timeOutReached(timer100ms))
+      if(!UseRTOSMultitasking)
+        run10TimesPerSecond();
 
-    if (millis() > timerwd)
+    if (timeOutReached(timerwd))
       runEach30Seconds();
 
-    if (millis() > timer1s)
+    if (timeOutReached(timer1s))
       runOncePerSecond();
+
+    if (timeOutReached(timermqtt)) {
+      runPeriodicalMQTT();
+    }
   }
+
   backgroundtasks();
 
+  if (readyForSleep()){
+    if (Settings.UseRules)
+    {
+      String event = F("System#Sleep");
+      rulesProcessing(event);
+    }
+    // Flush outstanding MQTT messages
+    runPeriodicalMQTT();
+
+    deepSleep(Settings.Delay);
+    //deepsleep will never return, its a special kind of reboot
+  }
 }
 
+
+void runPeriodicalMQTT() {
+  // MQTT_KEEPALIVE = 15 seconds.
+  if (!WiFiConnected(10)) {
+    updateMQTTclient_connected();
+    return;
+  }
+  //dont do this in backgroundtasks(), otherwise causes crashes. (https://github.com/letscontrolit/ESPEasy/issues/683)
+  int enabledMqttController = firstEnabledMQTTController();
+  if (enabledMqttController >= 0) {
+    if (!MQTTclient.loop()) {
+      updateMQTTclient_connected();
+      if (MQTTCheck(enabledMqttController)) {
+        updateMQTTclient_connected();
+      }
+    }
+  } else {
+    if (MQTTclient.connected()) {
+      MQTTclient.disconnect();
+      updateMQTTclient_connected();
+    }
+  }
+}
+
+void updateMQTTclient_connected() {
+  if (MQTTclient_connected != MQTTclient.connected()) {
+    MQTTclient_connected = !MQTTclient_connected;
+    if (!MQTTclient_connected)
+      addLog(LOG_LEVEL_ERROR, F("MQTT : Connection lost"));
+    if (Settings.UseRules) {
+      String event = MQTTclient_connected ? F("MQTT#Connected") : F("MQTT#Disconnected");
+      rulesProcessing(event);
+    }
+  }
+  if (!MQTTclient_connected) {
+    if (timermqtt_interval < 2000) {
+      timermqtt_interval += 250;
+    }
+  } else {
+    timermqtt_interval = 250;
+  }
+  timermqtt = millis() + timermqtt_interval;
+}
 
 /*********************************************************************************************\
  * Tasks that run 50 times per second
@@ -920,12 +1100,16 @@ void run10TimesPerSecond()
   start = micros();
   timer100ms = millis() + 100;
   PluginCall(PLUGIN_TEN_PER_SECOND, 0, dummyString);
+  PluginCall(PLUGIN_UNCONDITIONAL_POLL, 0, dummyString);
   if (Settings.UseRules && eventBuffer.length() > 0)
   {
     rulesProcessing(eventBuffer);
     eventBuffer = "";
   }
   elapsed = micros() - start;
+  #ifndef USE_RTOS_MULTITASKING
+    WebServer.handleClient();
+  #endif
 }
 
 
@@ -963,12 +1147,18 @@ void runOncePerSecond()
         }
       case CMD_REBOOT:
         {
-          ESP.reset();
+          #if defined(ESP8266)
+            ESP.reset();
+          #endif
+          #if defined(ESP32)
+            ESP.restart();
+          #endif
           break;
         }
     }
     cmd_within_mainloop = 0;
   }
+  WifiCheck();
 
   // clock events
   if (Settings.UseNTP)
@@ -1007,12 +1197,7 @@ void runOncePerSecond()
     Serial.print(F(" uS  1 ps:"));
     Serial.println(timer);
   }
-
-  if (timerAPoff != 0 && millis() > timerAPoff)
-  {
-    timerAPoff = 0;
-    WifiAPMode(false);
-  }
+  checkResetFactoryPin();
 }
 
 /*********************************************************************************************\
@@ -1020,20 +1205,31 @@ void runOncePerSecond()
 \*********************************************************************************************/
 void runEach30Seconds()
 {
+   extern void checkRAMtoLog();
+  checkRAMtoLog();
   wdcounter++;
   timerwd = millis() + 30000;
-  char str[60];
-  str[0] = 0;
-  sprintf_P(str, PSTR("Uptime %u ConnectFailures %u FreeMem %u"), wdcounter / 2, connectionFailures, FreeMem());
-  String log = F("WD   : ");
-  log += str;
+  String log;
+  log.reserve(60);
+  log = F("WD   : Uptime ");
+  log += wdcounter / 2;
+  log += F(" ConnectFailures ");
+  log += connectionFailures;
+  log += F(" FreeMem ");
+  log += FreeMem();
   addLog(LOG_LEVEL_INFO, log);
   sendSysInfoUDP(1);
   refreshNodeList();
-  if(Settings.ControllerEnabled[0])
-    MQTTCheck();
+
+  int enabledMqttController = firstEnabledMQTTController();
+  if (enabledMqttController >= 0) {
+    MQTTCheck(enabledMqttController);
+  }
+
+  #if defined(ESP8266)
   if (Settings.UseSSDP)
     SSDP_update();
+  #endif
 #if FEATURE_ADC_VCC
   vcc = ESP.getVcc() / 1000.0;
 #endif
@@ -1041,8 +1237,6 @@ void runEach30Seconds()
   loopCounter = 0;
   if (loopCounterLast > loopCounterMax)
     loopCounterMax = loopCounterLast;
-
-  WifiCheck();
 
   #ifdef FEATURE_REPORTING
   ReportStatus();
@@ -1056,13 +1250,14 @@ void runEach30Seconds()
 \*********************************************************************************************/
 void checkSensors()
 {
+  checkRAM(F("checkSensors"));
   bool isDeepSleep = isDeepSleepEnabled();
   //check all the devices and only run the sendtask if its time, or we if we used deep sleep mode
   for (byte x = 0; x < TASKS_MAX; x++)
   {
     if (
         (Settings.TaskDeviceTimer[x] != 0) &&
-        (isDeepSleep || (millis() > timerSensor[x]))
+        (isDeepSleep || timeOutReached(timerSensor[x]))
     )
     {
       timerSensor[x] = millis() + Settings.TaskDeviceTimer[x] * 1000;
@@ -1092,6 +1287,7 @@ void checkSensors()
 \*********************************************************************************************/
 void SensorSendTask(byte TaskIndex)
 {
+  checkRAM(F("SensorSendTask"));
   if (Settings.TaskDeviceEnabled[TaskIndex])
   {
     byte varIndex = TaskIndex * VARS_PER_TASK;
@@ -1199,7 +1395,7 @@ void checkSystemTimers()
   for (byte x = 0; x < SYSTEM_TIMER_MAX; x++)
     if (systemTimers[x].timer != 0)
     {
-      if (timeOut(systemTimers[x].timer))
+      if (timeOutReached(systemTimers[x].timer))
       {
         struct EventStruct TempEvent;
         TempEvent.Par1 = systemTimers[x].Par1;
@@ -1214,7 +1410,7 @@ void checkSystemTimers()
 
   for (byte x = 0; x < SYSTEM_CMD_TIMER_MAX; x++)
     if (systemCMDTimers[x].timer != 0)
-      if (timeOut(systemCMDTimers[x].timer))
+      if (timeOutReached(systemCMDTimers[x].timer))
       {
         struct EventStruct TempEvent;
         parseCommandString(&TempEvent, systemCMDTimers[x].action);
@@ -1232,32 +1428,37 @@ void checkSystemTimers()
 bool runningBackgroundTasks=false;
 void backgroundtasks()
 {
+  //checkRAM(F("backgroundtasks"));
+  //always start with a yield
+  yield();
+
   //prevent recursion!
   if (runningBackgroundTasks)
   {
-    yield();
     return;
   }
   runningBackgroundTasks=true;
 
-  tcpCleanup();
+  #if defined(ESP8266)
+    tcpCleanup();
+  #endif
 
-  if (Settings.UseSerial)
-    if (Serial.available())
-      if (!PluginCall(PLUGIN_SERIAL_IN, 0, dummyString))
-        serial();
+  if(!UseRTOSMultitasking){
+    if (Settings.UseSerial)
+      if (Serial.available())
+        if (!PluginCall(PLUGIN_SERIAL_IN, 0, dummyString))
+          serial();
+    WebServer.handleClient();
+    checkUDP();
+  }
 
   // process DNS, only used if the ESP has no valid WiFi config
-  if (wifiSetup)
+  if (dnsServerActive)
     dnsServer.processNextRequest();
 
-  WebServer.handleClient();
-  if(Settings.ControllerEnabled[0])
-    MQTTclient.loop();
-  checkUDP();
-
   #ifdef FEATURE_ARDUINO_OTA
-  ArduinoOTA.handle();
+  if(Settings.ArduinoOTAEnable)
+    ArduinoOTA.handle();
 
   //once OTA is triggered, only handle that and dont do other stuff. (otherwise it fails)
   while (ArduinoOTAtriggered)

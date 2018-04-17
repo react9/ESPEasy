@@ -1,3 +1,4 @@
+#ifdef USES_P061
 //#######################################################################################################
 //#################################### Plugin 061: PCF8574/MCP23017 KeyPad ##############################
 //#######################################################################################################
@@ -55,7 +56,7 @@
 
 #define PLUGIN_061
 #define PLUGIN_ID_061         61
-#define PLUGIN_NAME_061       "KeyPad - PCF8574 / MCP23017 [TESTING]"
+#define PLUGIN_NAME_061       "Keypad - PCF8574 / MCP23017 [TESTING]"
 #define PLUGIN_VALUENAME1_061 "ScanCode"
 
 // #include <*.h>   // no include needed
@@ -105,12 +106,12 @@ boolean Plugin_061(byte function, struct EventStruct *event, String& string)
         byte addr = CONFIG(0);
 
         int optionValues[16] = { 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D, 0x3E, 0x3F };
-        addFormSelectorI2C(string, F("i2c_addr"), (CONFIG(1) == 0) ? 8 : 16, optionValues, addr);
+        addFormSelectorI2C(F("i2c_addr"), (CONFIG(1) == 0) ? 8 : 16, optionValues, addr);
         if (CONFIG(1) != 0)
-          addFormNote(string, F("PCF8574 uses address 0x20+; PCF8574<b>A</b> uses address 0x38+"));
+          addFormNote(F("PCF8574 uses address 0x20+; PCF8574<b>A</b> uses address 0x38+"));
 
         String options[3] = { F("MCP23017 (Matrix 9x8)"), F("PCF8574 (Matrix 5x4)"), F("PCF8574 (Direct 8)") };
-        addFormSelector(string, F("Chip (Mode)"), F("chip"), 3, options, NULL, CONFIG(1));
+        addFormSelector(F("Chip (Mode)"), F("chip"), 3, options, NULL, CONFIG(1));
 
         success = true;
         break;
@@ -373,3 +374,4 @@ byte PCF8574_KeyPadDirectScan(byte addr)
 }
 
 #endif
+#endif // USES_P061
