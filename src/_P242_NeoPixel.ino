@@ -5,7 +5,7 @@
 // Format: NeoPixelAll,R,G,B,FADE_DELAY,MODE
 // R,G,B = 0 - 255
 // FADE_DELAY = 0 - 30
-// MODE 0 = NORMAL, 1 = RAINBOW TASK
+// MODE 0 = NORMAL, 1 = RAINBOW TASK x
 
 #include <Adafruit_NeoPixel.h>
 Adafruit_NeoPixel *Plugin_242_pixels;
