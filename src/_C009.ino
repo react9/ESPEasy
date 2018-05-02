@@ -1,3 +1,4 @@
+#ifdef USES_C009
 //#######################################################################################################
 //########################### Controller Plugin 009: FHEM HTTP ##########################################
 //#######################################################################################################
@@ -20,7 +21,7 @@
  - moved on/off translation for SENSOR_TYPE_SWITCH/DIMMER to FHEM module
  - v1.03
  - changed http request from GET to POST (RFC conform)
- - removed obsolet http get url code
+ - removed obsolete http get url code
  - v1.04
  - added build options and node_type_id to JSON/device
  /******************************************************************************/
@@ -197,3 +198,4 @@ void FHEMHTTPsend(String & url, String & buffer, byte index)
   client.flush();
   client.stop();
 }
+#endif

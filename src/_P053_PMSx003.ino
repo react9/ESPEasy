@@ -1,14 +1,14 @@
+#ifdef USES_P053
 //#######################################################################################################
 //#################################### Plugin 053: Plantower PMSx003 ####################################
 //#######################################################################################################
 //
 // http://www.aqmd.gov/docs/default-source/aq-spec/resources-page/plantower-pms5003-manual_v2-3.pdf?sfvrsn=2
 //
-// The PMSx003 are particle sensors. Particles are measured by blowing air though the enclosue and,
-// togther with a laser, count the amount of particles. These sensors have an integrated microcontroller
+// The PMSx003 are particle sensors. Particles are measured by blowing air through the enclosure and,
+// together with a laser, count the amount of particles. These sensors have an integrated microcontroller
 // that counts particles and transmits measurement data over the serial connection.
 
-#ifdef PLUGIN_BUILD_TESTING
 
 #include <ESPeasySoftwareSerial.h>
 
@@ -300,4 +300,4 @@ boolean Plugin_053(byte function, struct EventStruct *event, String& string)
   }
   return success;
 }
-#endif // PLUGIN_BUILD_TESTING
+#endif // USES_P053

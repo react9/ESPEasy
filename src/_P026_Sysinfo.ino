@@ -1,3 +1,4 @@
+#ifdef USES_P026
 //#######################################################################################################
 //#################################### Plugin 026: System Info ##########################################
 //#######################################################################################################
@@ -40,7 +41,7 @@ boolean Plugin_026(byte function, struct EventStruct *event, String& string)
     case PLUGIN_WEBFORM_LOAD:
       {
         byte choice = Settings.TaskDevicePluginConfig[event->TaskIndex][0];
-        String options[9];
+        String options[10];
         options[0] = F("Uptime");
         options[1] = F("Free RAM");
         options[2] = F("Wifi RSSI");
@@ -50,7 +51,8 @@ boolean Plugin_026(byte function, struct EventStruct *event, String& string)
         options[6] = F("IP 2.Octet");
         options[7] = F("IP 3.Octet");
         options[8] = F("IP 4.Octet");
-        addFormSelector(string, F("Indicator"), F("plugin_026"), 9, options, NULL, choice);
+        options[9] = F("Web activity");
+        addFormSelector(F("Indicator"), F("plugin_026"), 10, options, NULL, choice);
 
         success = true;
         break;
@@ -117,6 +119,11 @@ boolean Plugin_026(byte function, struct EventStruct *event, String& string)
             value = WiFi.localIP()[3];
             break;
           }
+          case 9:
+          {
+            value = (millis()-lastWeb)/1000; // respond in seconds
+            break;
+          }
         }
         UserVar[event->BaseVarIndex] = value;
         String log = F("SYS  : ");
@@ -128,3 +135,4 @@ boolean Plugin_026(byte function, struct EventStruct *event, String& string)
   }
   return success;
 }
+#endif // USES_P026

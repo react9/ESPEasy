@@ -1,3 +1,4 @@
+#ifdef USES_P001
 //#######################################################################################################
 //#################################### Plugin 001: Input Switch #########################################
 //#######################################################################################################
@@ -6,9 +7,11 @@
 #define PLUGIN_ID_001         1
 #define PLUGIN_NAME_001       "Switch input - Switch"
 #define PLUGIN_VALUENAME1_001 "Switch"
-Servo servo1;
-Servo servo2;
-
+#if defined(ESP8266)
+  Servo servo1;
+  Servo servo2;
+#endif
+#define GPIO_MAX 17
 // Make sure the initial default is a switch (value 0)
 #define PLUGIN_001_TYPE_SWITCH 0
 #define PLUGIN_001_TYPE_DIMMER 3 // Due to some changes in previous versions, do not use 2.
@@ -25,6 +28,8 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
   boolean success = false;
   static boolean switchstate[TASKS_MAX];
   static boolean outputstate[TASKS_MAX];
+  static int8_t PinMonitor[GPIO_MAX];
+  static int8_t PinMonitorState[GPIO_MAX];
 
   switch (function)
   {
@@ -64,13 +69,13 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
         options[1] = F("Dimmer");
         int optionValues[2] = { PLUGIN_001_TYPE_SWITCH, PLUGIN_001_TYPE_DIMMER };
         const byte switchtype = P001_getSwitchType(event);
-        addFormSelector(string, F("Switch Type"), F("plugin_001_type"), 2, options, optionValues, switchtype);
+        addFormSelector(F("Switch Type"), F("plugin_001_type"), 2, options, optionValues, switchtype);
 
         if (switchtype == PLUGIN_001_TYPE_DIMMER)
         {
           char tmpString[128];
           sprintf_P(tmpString, PSTR("<TR><TD>Dim value:<TD><input type='text' name='plugin_001_dimvalue' value='%u'>"), Settings.TaskDevicePluginConfig[event->TaskIndex][1]);
-          string += tmpString;
+          addHtml(tmpString);
         }
 
         byte choice = Settings.TaskDevicePluginConfig[event->TaskIndex][2];
@@ -79,9 +84,9 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
         buttonOptions[1] = F("Push Button Active Low");
         buttonOptions[2] = F("Push Button Active High");
         int buttonOptionValues[3] = {PLUGIN_001_BUTTON_TYPE_NORMAL_SWITCH, PLUGIN_001_BUTTON_TYPE_PUSH_ACTIVE_LOW, PLUGIN_001_BUTTON_TYPE_PUSH_ACTIVE_HIGH};
-        addFormSelector(string, F("Switch Button Type"), F("plugin_001_button"), 3, buttonOptions, buttonOptionValues, choice);
+        addFormSelector(F("Switch Button Type"), F("plugin_001_button"), 3, buttonOptions, buttonOptionValues, choice);
 
-        addFormCheckBox(string, F("Send Boot state"),F("plugin_001_boot"),
+        addFormCheckBox(F("Send Boot state"),F("plugin_001_boot"),
         		Settings.TaskDevicePluginConfig[event->TaskIndex][3]);
 
         success = true;
@@ -106,6 +111,11 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
 
     case PLUGIN_INIT:
       {
+        for (byte x=0; x < GPIO_MAX; x++){
+           PinMonitor[x] = 0;
+           PinMonitorState[x] = 0;
+          }
+
         if (Settings.TaskDevicePin1PullUp[event->TaskIndex])
           pinMode(Settings.TaskDevicePin1[event->TaskIndex], INPUT_PULLUP);
         else
@@ -123,6 +133,38 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
           outputstate[event->TaskIndex] = !outputstate[event->TaskIndex];
         }
         success = true;
+        break;
+      }
+
+    case PLUGIN_REQUEST:
+      {
+        String device = parseString(string, 1);
+        String command = parseString(string, 2);
+        String strPar1 = parseString(string, 3);
+        int par1 = strPar1.toInt();
+        if (device == F("gpio") && command == F("pinstate"))
+        {
+          string = digitalRead(par1);
+          success = true;
+        }
+        break;
+      }
+
+    case PLUGIN_UNCONDITIONAL_POLL:
+      {
+        // port monitoring, on request by rule command
+        for (byte x=0; x < GPIO_MAX; x++)
+           if (PinMonitor[x] != 0){
+             byte state = digitalRead(x);
+             if (PinMonitorState[x] != state){
+               String eventString = F("GPIO#");
+               eventString += x;
+               eventString += F("=");
+               eventString += state;
+               rulesProcessing(eventString);
+               PinMonitorState[x] = state;
+             }
+           }
         break;
       }
 
@@ -197,11 +239,16 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
         if (command == F("gpio"))
         {
           success = true;
-          if (event->Par1 >= 0 && event->Par1 <= 16)
+          if (event->Par1 >= 0 && event->Par1 <= PIN_D_MAX)
           {
-            pinMode(event->Par1, OUTPUT);
-            digitalWrite(event->Par1, event->Par2);
-            setPinState(PLUGIN_ID_001, event->Par1, PIN_MODE_OUTPUT, event->Par2);
+            if (event->Par2 == 2) {
+              pinMode(event->Par1, INPUT);
+              setPinState(PLUGIN_ID_001, event->Par1, PIN_MODE_INPUT, 0);
+            } else {
+              pinMode(event->Par1, OUTPUT);
+              digitalWrite(event->Par1, event->Par2);
+              setPinState(PLUGIN_ID_001, event->Par1, PIN_MODE_OUTPUT, event->Par2);
+            }
             log = String(F("SW   : GPIO ")) + String(event->Par1) + String(F(" Set to ")) + String(event->Par2);
             addLog(LOG_LEVEL_INFO, log);
             SendStatus(event->Source, getPinStateJSON(SEARCH_PIN_STATE, PLUGIN_ID_001, event->Par1, log, 0));
@@ -211,10 +258,11 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
         if (command == F("pwm"))
         {
           success = true;
-          if (event->Par1 >= 0 && event->Par1 <= 16)
+          if (event->Par1 >= 0 && event->Par1 <= PIN_D_MAX)
           {
-            pinMode(event->Par1, OUTPUT);
-
+            #if defined(ESP8266)
+              pinMode(event->Par1, OUTPUT);
+            #endif
             if(event->Par3 != 0)
             {
               byte prev_mode;
@@ -231,12 +279,22 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
                 curr_value += step_value;
                 int16_t new_value;
                 new_value = (uint16_t)(curr_value >> 12);
-                analogWrite(event->Par1, new_value);
+                #if defined(ESP8266)
+                  analogWrite(event->Par1, new_value);
+                #endif
+                #if defined(ESP32)
+                  analogWriteESP32(event->Par1, new_value);
+                #endif
                 delay(1);
               }
             }
 
-            analogWrite(event->Par1, event->Par2);
+            #if defined(ESP8266)
+              analogWrite(event->Par1, event->Par2);
+            #endif
+            #if defined(ESP32)
+              analogWriteESP32(event->Par1, event->Par2);
+            #endif
             setPinState(PLUGIN_ID_001, event->Par1, PIN_MODE_PWM, event->Par2);
             log = String(F("SW   : GPIO ")) + String(event->Par1) + String(F(" Set PWM to ")) + String(event->Par2);
             addLog(LOG_LEVEL_INFO, log);
@@ -247,7 +305,7 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
         if (command == F("pulse"))
         {
           success = true;
-          if (event->Par1 >= 0 && event->Par1 <= 16)
+          if (event->Par1 >= 0 && event->Par1 <= PIN_D_MAX)
           {
             pinMode(event->Par1, OUTPUT);
             digitalWrite(event->Par1, event->Par2);
@@ -264,7 +322,7 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
         {
           boolean time_in_msec = command == F("longpulse_ms");
           success = true;
-          if (event->Par1 >= 0 && event->Par1 <= 16)
+          if (event->Par1 >= 0 && event->Par1 <= PIN_D_MAX)
           {
             pinMode(event->Par1, OUTPUT);
             digitalWrite(event->Par1, event->Par2);
@@ -287,12 +345,16 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
               case 1:
 
                 //IRAM: doing servo stuff uses 740 bytes IRAM. (doesnt matter how many instances)
-                servo1.attach(event->Par2);
-                servo1.write(event->Par3);
+                #if defined(ESP8266)
+                  servo1.attach(event->Par2);
+                  servo1.write(event->Par3);
+                #endif
                 break;
               case 2:
-                servo2.attach(event->Par2);
-                servo2.write(event->Par3);
+                #if defined(ESP8266)
+                  servo2.attach(event->Par2);
+                  servo2.write(event->Par3);
+                #endif
                 break;
             }
           setPinState(PLUGIN_ID_001, event->Par2, PIN_MODE_SERVO, event->Par3);
@@ -310,6 +372,15 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
           }
         }
 
+        if (command == F("monitor"))
+        {
+          if (parseString(string, 2) == F("gpio"))
+          {
+            PinMonitor[event->Par2] = 1;
+            success = true;
+          }
+        }
+
         if (command == F("inputswitchstate"))
         {
           success = true;
@@ -317,7 +388,7 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
           outputstate[event->Par1] = event->Par2;
         }
 
-        #ifdef PLUGIN_BUILD_TESTING
+        // FIXME: Absolutely no error checking in play_rtttl, until then keep it only in testing
         //play a tune via a RTTTL string, look at https://www.letscontrolit.com/forum/viewtopic.php?f=4&t=343&hilit=speaker&start=10 for more info.
         if (command == F("rtttl"))
         {
@@ -325,10 +396,11 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
           if (event->Par1 >= 0 && event->Par1 <= 16)
           {
             pinMode(event->Par1, OUTPUT);
-            char sng[1024] ="";
-            string.replace("-","#");
-            string.toCharArray(sng, 1024);
-            play_rtttl(event->Par1, sng);
+            // char sng[1024] ="";
+            String tmpString=string;
+            tmpString.replace("-","#");
+            // tmpString.toCharArray(sng, 1024);
+            play_rtttl(event->Par1, tmpString.c_str());
             setPinState(PLUGIN_ID_001, event->Par1, PIN_MODE_OUTPUT, event->Par2);
             log = String(F("SW   : ")) + string;
             addLog(LOG_LEVEL_INFO, log);
@@ -340,7 +412,7 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
         if (command == F("tone"))
         {
           success = true;
-          if (event->Par1 >= 0 && event->Par1 <= 16)
+          if (event->Par1 >= 0 && event->Par1 <= PIN_D_MAX)
           {
             pinMode(event->Par1, OUTPUT);
             tone(event->Par1, event->Par2, event->Par3);
@@ -350,7 +422,6 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
             SendStatus(event->Source, getPinStateJSON(SEARCH_PIN_STATE, PLUGIN_ID_001, event->Par1, log, 0));
           }
         }
-        #endif
 
         break;
       }
@@ -364,6 +435,33 @@ boolean Plugin_001(byte function, struct EventStruct *event, String& string)
   }
   return success;
 }
+
+
+#if defined(ESP32)
+void analogWriteESP32(int pin, int value)
+{
+  // find existing channel if this pin has been used before
+  int8_t ledChannel = -1;
+  for(byte x = 0; x < 16; x++)
+    if (ledChannelPin[x] == pin)
+      ledChannel = x;
+
+  if(ledChannel == -1) // no channel set for this pin
+    {
+      for(byte x = 0; x < 16; x++) // find free channel
+        if (ledChannelPin[x] == -1)
+          {
+            int freq = 5000;
+            ledChannelPin[x] = pin;  // store pin nr
+            ledcSetup(x, freq, 10);  // setup channel
+            ledcAttachPin(pin, x);   // attach to this pin
+            ledChannel = x;
+            break;
+          }
+    }
+  ledcWrite(ledChannel, value);
+}
+#endif
 
 // TD-er: Needed to fix a mistake in earlier fixes.
 byte P001_getSwitchType(struct EventStruct *event) {
@@ -381,3 +479,4 @@ byte P001_getSwitchType(struct EventStruct *event) {
   }
   return choice;
 }
+#endif // USES_P001

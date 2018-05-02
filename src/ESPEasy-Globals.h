@@ -1,6 +1,9 @@
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
 
 #ifndef ESPEASY_GLOBALS_H_
 #define ESPEASY_GLOBALS_H_
+
 // ********************************************************************************
 //   User specific configuration
 // ********************************************************************************
@@ -15,7 +18,8 @@
 #define DEFAULT_DELAY       60                  // Sleep Delay in seconds
 
 // --- Wifi AP Mode (when your Wifi Network is not reachable) ----------------------------------------
-#define DEFAULT_AP_IP           192,168,4,1         // Enter IP address (comma separated) for AP (config) mode
+#define DEFAULT_AP_IP       192,168,4,1         // Enter IP address (comma separated) for AP (config) mode
+#define DEFAULT_AP_SUBNET   255,255,255,0       // Enter IP address (comma separated) for AP (config) mode
 #define DEFAULT_AP_KEY      "configesp"         // Enter network WPA key for AP (config) mode
 
 // --- Wifi Client Mode -----------------------------------------------------------------------------
@@ -27,6 +31,9 @@
 #define DEFAULT_DNS         "192.168.0.1"       // Enter your DNS
 #define DEFAULT_GW          "192.168.0.1"       // Enter your Gateway
 #define DEFAULT_SUBNET      "255.255.255.0"     // Enter your Subnet
+#define DEFAULT_IPRANGE_LOW  "0.0.0.0"          // Allowed IP range to access webserver
+#define DEFAULT_IPRANGE_HIGH "255.255.255.255"  // Allowed IP range to access webserver
+#define DEFAULT_IP_BLOCK_LEVEL 1                // 0: ALL_ALLOWED  1: LOCAL_SUBNET_ALLOWED  2: ONLY_IP_RANGE_ALLOWED
 
 #define DEFAULT_WIFI_CONNECTION_TIMEOUT  10000  // minimum timeout in ms for WiFi to be connected.
 
@@ -49,8 +56,19 @@
 //   8 = Generic HTTP
 //   9 = FHEM HTTP
 
+#define DEFAULT_PIN_I2C_SDA              4
+#define DEFAULT_PIN_I2C_SCL              5
+
+#define DEFAULT_PIN_STATUS_LED           -1
+#define DEFAULT_PIN_STATUS_LED_INVERSED  true
+
+
 
 // --- Advanced Settings ---------------------------------------------------------------------------------
+#if defined(ESP32)
+  #define USE_RTOS_MULTITASKING
+#endif
+
 #define DEFAULT_USE_RULES                       false   // (true|false) Enable Rules?
 
 #define DEFAULT_MQTT_RETAIN                     false   // (true|false) Retain MQTT messages?
@@ -75,15 +93,19 @@
 #define DEFAULT_USE_SERIAL                      true    // (true|false) Enable Logging to the Serial Port
 #define DEFAULT_SERIAL_BAUD                     115200  // Serial Port Baud Rate
 
+#define DEFAULT_SYSLOG_FACILITY 	0 	// kern
+
 /*
 // --- Experimental Advanced Settings (NOT ACTIVES at this time) ------------------------------------
-#define DEFAULT_USE_GLOBAL_SYNC			false		// (true|false)
-#define DEFAULT_SYNC_UDP_PORT			0			//
-#define DEFAULT_IP_OCTET				0			//
-#define DEFAULT_WD_IC2_ADDRESS			0			//
-#define DEFAULT_USE_SSDP			false		// (true|false)
-#define DEFAULT_CON_FAIL_THRES			0			//
-#define DEFAULT_I2C_CLOCK_LIMIT			0			//
+
+#define DEFAULT_USE_GLOBAL_SYNC                 false           // (true|false)
+#define DEFAULT_SYNC_UDP_PORT                   0                       //
+
+#define DEFAULT_IP_OCTET                                0                       //
+#define DEFAULT_WD_IC2_ADDRESS                  0                       //
+#define DEFAULT_USE_SSDP                        false           // (true|false)
+#define DEFAULT_CON_FAIL_THRES                  0                       //
+#define DEFAULT_I2C_CLOCK_LIMIT                 0                       //
 */
 
 
@@ -95,13 +117,18 @@
 #endif
 
 
-//enable Arduino OTA updating.
-//Note: This adds around 10kb to the firmware size, and 1kb extra ram.
-// #define FEATURE_ARDUINO_OTA
+#if defined(ESP8266)
+  //enable Arduino OTA updating.
+  //Note: This adds around 10kb to the firmware size, and 1kb extra ram.
+  #define FEATURE_ARDUINO_OTA
 
-//enable mDNS mode (adds about 6kb ram and some bytes IRAM)
-// #define FEATURE_MDNS
-
+  //enable mDNS mode (adds about 6kb ram and some bytes IRAM)
+  //#define FEATURE_MDNS
+#endif
+#if defined(ESP32)
+ #define FEATURE_ARDUINO_OTA
+ //#define FEATURE_MDNS
+#endif
 
 //enable reporting status to ESPEasy developers.
 //this informs us of crashes and stability issues.
@@ -123,18 +150,28 @@
 //build all plugins that still are being developed and are broken or incomplete
 //#define PLUGIN_BUILD_DEV
 
+//add this if you want SD support (add 10k flash)
+//#define FEATURE_SD
+
 // ********************************************************************************
 //   DO NOT CHANGE ANYTHING BELOW THIS LINE
 // ********************************************************************************
-#include "core_version.h"
-#ifndef ARDUINO_ESP8266_RELEASE_2_3_0
-#error ESPEasy v2.0 only support Arduino core 2.3.0. (Use the ESPEasy development branch to fix this)
+#define ESP_PROJECT_PID           2016110801L
+
+#if defined(ESP8266)
+  #define VERSION                             2 // config file version (not ESPEasy version). increase if you make incompatible changes to config system.
+#endif
+#if defined(ESP32)
+  #define VERSION                             3 // Change in config.dat mapping needs a full reset
 #endif
 
-#define ESP_PROJECT_PID           2016110801L
-#define VERSION                             2 // config file version (not ESPEasy version). increase if you make incompatible changes to config system.
-#define BUILD                           20000 // git version 2.0.0
-#define BUILD_NOTES                 " - Mega"
+#define BUILD                           20102 // git version 2.1.02
+#if defined(ESP8266)
+  #define BUILD_NOTES                 " - Mega"
+#endif
+#if defined(ESP32)
+  #define BUILD_NOTES                 " - Mega32"
+#endif
 
 #ifndef BUILD_GIT
 #define BUILD_GIT "(custom)"
@@ -147,7 +184,6 @@
 #define NODE_TYPE_ID_ESP_EASY32_STD        33
 #define NODE_TYPE_ID_ARDUINO_EASY_STD      65
 #define NODE_TYPE_ID_NANO_EASY_STD         81
-#define NODE_TYPE_ID                        NODE_TYPE_ID_ESP_EASYM_STD
 
 #define PLUGIN_INIT_ALL                     1
 #define PLUGIN_INIT                         2
@@ -173,6 +209,8 @@
 #define PLUGIN_GET_DEVICEGPIONAMES         22
 #define PLUGIN_EXIT                        23
 #define PLUGIN_GET_CONFIG                  24
+#define PLUGIN_UNCONDITIONAL_POLL          25
+#define PLUGIN_REQUEST                     26
 
 #define CPLUGIN_PROTOCOL_ADD                1
 #define CPLUGIN_PROTOCOL_TEMPLATE           2
@@ -213,9 +251,9 @@
 #define CMD_WIFI_DISCONNECT               135
 
 #if defined(PLUGIN_BUILD_TESTING) || defined(PLUGIN_BUILD_DEV)
-  #define DEVICES_MAX                      72
+  #define DEVICES_MAX                      75
 #else
-  #define DEVICES_MAX                      64
+  #define DEVICES_MAX                      255
 #endif
 
 #if defined(ESP8266)
@@ -290,75 +328,148 @@
 #define DAT_CONTROLLER_SIZE              1024
 #define DAT_NOTIFICATION_SIZE            1024
 
-#define DAT_OFFSET_TASKS                 4096  // each task = 2k, (1024 basic + 1024 bytes custom), 12 max
-#define DAT_OFFSET_CONTROLLER           28672  // each controller = 1k, 4 max
-#define DAT_OFFSET_CUSTOM_CONTROLLER    32768  // each custom controller config = 1k, 4 max.
-
+#if defined(ESP8266)
+  #define DAT_OFFSET_TASKS                 4096  // each task = 2k, (1024 basic + 1024 bytes custom), 12 max
+  #define DAT_OFFSET_CONTROLLER           28672  // each controller = 1k, 4 max
+  #define DAT_OFFSET_CUSTOM_CONTROLLER    32768  // each custom controller config = 1k, 4 max.
+  #define CONFIG_FILE_SIZE                65536
+#endif
+#if defined(ESP32)
+  #define DAT_OFFSET_CONTROLLER            8192  // each controller = 1k, 4 max
+  #define DAT_OFFSET_CUSTOM_CONTROLLER    12288  // each custom controller config = 1k, 4 max.
+  #define DAT_OFFSET_TASKS                32768  // each task = 2k, (1024 basic + 1024 bytes custom), 32 max
+  #define CONFIG_FILE_SIZE               131072
+#endif
 
 /*
-	To modify the stock configuration without changing this repo file :
+        To modify the stock configuration without changing this repo file :
     - define USE_CUSTOM_H as a build flags. ie : export PLATFORMIO_BUILD_FLAGS="'-DUSE_CUSTOM_H'"
-	- add a "Custom.h" file in this folder.
+        - add a "Custom.h" file in this folder.
+
 */
 #ifdef USE_CUSTOM_H
 #include "Custom.h"
 #endif
 
-#define FILE_CONFIG       "config.dat"
-#define FILE_SECURITY     "security.dat"
-#define FILE_NOTIFICATION "notification.dat"
-#define FILE_RULES        "rules1.dat"
+
 #include "ESPEasyTimeTypes.h"
-#include "lwip/tcp_impl.h"
-#include <ESP8266WiFi.h>
-#include <ESP8266Ping.h>
-#include <DNSServer.h>
-#include <WiFiUdp.h>
-#include <ESP8266WebServer.h>
-#ifdef FEATURE_MDNS
-#include <ESP8266mDNS.h>
+#define FS_NO_GLOBALS
+#if defined(ESP8266)
+  #include "core_version.h"
+  #define NODE_TYPE_ID                        NODE_TYPE_ID_ESP_EASYM_STD
+  #define FILE_CONFIG       "config.dat"
+  #define FILE_SECURITY     "security.dat"
+  #define FILE_NOTIFICATION "notification.dat"
+  #define FILE_RULES        "rules1.txt"
+  #include <lwip/init.h>
+  #ifndef LWIP_VERSION_MAJOR
+    #error
+  #endif
+  #if LWIP_VERSION_MAJOR == 2
+  //  #include <lwip/priv/tcp_priv.h>
+  #else
+    #include <lwip/tcp_impl.h>
+  #endif
+  #include <ESP8266WiFi.h>
+  #include <ESP8266Ping.h>
+  #include <ESP8266WebServer.h>
+  ESP8266WebServer WebServer(80);
+  #include <DNSServer.h>
+  #include <Servo.h>
+  #include <ESP8266HTTPUpdateServer.h>
+  ESP8266HTTPUpdateServer httpUpdater(true);
+  #ifndef LWIP_OPEN_SRC
+  #define LWIP_OPEN_SRC
+  #endif
+  #include "lwip/opt.h"
+  #include "lwip/udp.h"
+  #include "lwip/igmp.h"
+  #include "include/UdpContext.h"
+  #include "limits.h"
+  extern "C" {
+   #include "user_interface.h"
+  }
+  extern "C" {
+  #include "spi_flash.h"
+  }
+  extern "C" uint32_t _SPIFFS_start;
+  extern "C" uint32_t _SPIFFS_end;
+  extern "C" uint32_t _SPIFFS_page;
+  extern "C" uint32_t _SPIFFS_block;
+  #ifdef FEATURE_MDNS
+    #include <ESP8266mDNS.h>
+  #endif
+  #ifdef FEATURE_ARDUINO_OTA
+    #include <ArduinoOTA.h>
+    #include <ESP8266mDNS.h>
+    bool ArduinoOTAtriggered=false;
+  #endif
+  #define PIN_D_MAX        16
+#endif
+#if defined(ESP32)
+
+  // Temp fix for a missing core_version.h within ESP Arduino core. Wait until they actually have different releases
+  #define ARDUINO_ESP8266_RELEASE "2_4_0"
+
+  #define NODE_TYPE_ID                        NODE_TYPE_ID_ESP_EASY32_STD
+  #define ICACHE_RAM_ATTR IRAM_ATTR
+  #define FILE_CONFIG       "/config.dat"
+  #define FILE_SECURITY     "/security.dat"
+  #define FILE_NOTIFICATION "/notification.dat"
+  #define FILE_RULES        "/rules1.txt"
+  #include <WiFi.h>
+  #include  "esp32_ping.h"
+  #include <ESP32WebServer.h>
+  #include "SPIFFS.h"
+  ESP32WebServer WebServer(80);
+  #ifdef FEATURE_MDNS
+    #include <ESPmDNS.h>
+  #endif
+  #ifdef FEATURE_ARDUINO_OTA
+    #include <ArduinoOTA.h>
+    #include <ESPmDNS.h>
+    bool ArduinoOTAtriggered=false;
+  #endif
+  #define PIN_D_MAX        39
+  int8_t ledChannelPin[16];
 #endif
 
+#include <WiFiUdp.h>
+#include <DNSServer.h>
 #include <Wire.h>
 #include <SPI.h>
 #include <PubSubClient.h>
-// #include <ArduinoJson.h>
-// #include <LiquidCrystal_I2C.h>
-#include <Servo.h>
-#define FS_NO_GLOBALS
 #include <FS.h>
+#ifdef FEATURE_SD
 #include <SD.h>
-#include <ESP8266HTTPUpdateServer.h>
-ESP8266HTTPUpdateServer httpUpdater(true);
+#else
+using namespace fs;
+#endif
 #include <base64.h>
 #if FEATURE_ADC_VCC
 ADC_MODE(ADC_VCC);
 #endif
-#ifndef LWIP_OPEN_SRC
-#define LWIP_OPEN_SRC
+
+#define ESPEASY_WIFI_DISCONNECTED            0
+#define ESPEASY_WIFI_CONNECTED               1
+#define ESPEASY_WIFI_GOT_IP                  2
+#define ESPEASY_WIFI_SERVICES_INITIALIZED    3
+
+#if defined(ESP32)
+void WiFiEvent(system_event_id_t event, system_event_info_t info);
+#else
+WiFiEventHandler stationConnectedHandler;
+WiFiEventHandler stationDisconnectedHandler;
+WiFiEventHandler stationGotIpHandler;
+WiFiEventHandler APModeStationConnectedHandler;
+WiFiEventHandler APModeStationDisconnectedHandler;
 #endif
-#include "lwip/opt.h"
-#include "lwip/udp.h"
-#include "lwip/igmp.h"
-#include "include/UdpContext.h"
-#include "limits.h"
-
-extern "C" {
-#include "user_interface.h"
-}
-
-
-#ifdef FEATURE_ARDUINO_OTA
-#include <ArduinoOTA.h>
-#include <ESP8266mDNS.h>
-bool ArduinoOTAtriggered=false;
-#endif
-
 
 // Setup DNS, only used if the ESP has no valid WiFi config
 const byte DNS_PORT = 53;
 IPAddress apIP(DEFAULT_AP_IP);
 DNSServer dnsServer;
+bool dnsServerActive = false;
 #ifdef FEATURE_MDNS
 MDNSResponder mdns;
 #endif
@@ -367,25 +478,92 @@ MDNSResponder mdns;
 WiFiClient mqtt;
 PubSubClient MQTTclient(mqtt);
 bool MQTTclient_should_reconnect = true;
-
-// WebServer
-ESP8266WebServer WebServer(80);
+bool MQTTclient_connected = false;
+int mqtt_reconnect_count = 0;
 
 // udp protocol stuff (syslog, global sync, node info list, ntp time)
 WiFiUDP portUDP;
 
+struct CRCStruct{
+  char compileTimeMD5[16+32+1]= "MD5_MD5_MD5_MD5_BoundariesOfTheSegmentsGoHere...";
+  char binaryFilename[16+32+1]= "ThisIsTheDummyPlaceHolderForTheBinaryFilename...";
+  char compileTime[16]= __TIME__;
+  char compileDate[16]= __DATE__;
+  uint8_t runTimeMD5[16]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  bool checkPassed (void){ return memcmp(compileTimeMD5,runTimeMD5,16)==0 ; }
+  uint32_t numberOfCRCBytes=0;
+}CRCValues;
+
+enum Command {
+  cmd_Unknown,
+  cmd_accessinfo,
+  cmd_background,
+  cmd_BlynkGet,
+  cmd_build,
+  cmd_clearaccessblock,
+  cmd_clearRTCRAM,
+  cmd_config,
+  cmd_Debug,
+  cmd_Delay,
+  cmd_deepSleep,
+  cmd_Erase,
+  cmd_Event,
+  cmd_executeRules,
+  cmd_i2cscanner,
+  cmd_IP,
+  cmd_Load,
+  cmd_lowmem,
+  cmd_malloc,
+  cmd_meminfo,
+  cmd_Name,
+  cmd_notify,
+  cmd_NoSleep,
+  cmd_Password,
+  cmd_Publish,
+  cmd_Reboot,
+  cmd_Reset,
+  cmd_Restart,
+  cmd_resetFlashWriteCounter,
+  cmd_Rules,
+  cmd_sdcard,
+  cmd_sdremove,
+  cmd_sysload,
+  cmd_Save,
+  cmd_SendTo,
+  cmd_SendToHTTP,
+  cmd_SendToUDP,
+  cmd_SerialFloat,
+  cmd_Settings,
+  cmd_TaskClear,
+  cmd_TaskClearAll,
+  cmd_TaskRun,
+  cmd_TaskValueSet,
+  cmd_TimerSet,
+  cmd_TimerPause,
+  cmd_TimerResume,
+  cmd_udptest,
+  cmd_Unit,
+  cmd_wdconfig,
+  cmd_wdread,
+  cmd_WifiAPMode,
+  cmd_WifiConnect,
+  cmd_WifiDisconnect,
+  cmd_WifiKey2,
+  cmd_WifiKey,
+  cmd_WifiSSID2,
+  cmd_WifiSSID,
+  cmd_WifiScan
+};
+
+
 // Forward declarations.
+Command commandStringToEnum(const char * cmd);
 bool WiFiConnected(uint32_t timeout_ms);
+bool WiFiConnected();
 bool hostReachable(const IPAddress& ip);
 bool hostReachable(const String& hostname);
-
-extern "C" {
-#include "spi_flash.h"
-}
-extern "C" uint32_t _SPIFFS_start;
-extern "C" uint32_t _SPIFFS_end;
-extern "C" uint32_t _SPIFFS_page;
-extern "C" uint32_t _SPIFFS_block;
+void formatMAC(const uint8_t* mac, char (&strMAC)[20]);
+void formatIP(const IPAddress& ip, char (&strIP)[20]);
 
 struct SecurityStruct
 {
@@ -409,7 +587,13 @@ struct SecurityStruct
   char          ControllerUser[CONTROLLER_MAX][26];
   char          ControllerPassword[CONTROLLER_MAX][64];
   char          Password[26];
-  //its safe to extend this struct, up to 4096 bytes, default values in config are 0
+  byte          AllowedIPrangeLow[4]; // TD-er: Use these
+  byte          AllowedIPrangeHigh[4];
+  byte          IPblockLevel;
+
+  //its safe to extend this struct, up to 4096 bytes, default values in config are 0. Make sure crc is last
+  uint8_t       ProgmemMd5[16]; // crc of the binary that last saved the struct to file.
+  uint8_t       md5[16];
 } SecuritySettings;
 
 struct SettingsStruct
@@ -421,10 +605,11 @@ struct SettingsStruct
     BaudRate(0), MessageDelay(0), deepSleep(0),
     CustomCSS(false), DST(false), WDI2CAddress(0),
     UseRules(false), UseSerial(false), UseSSDP(false), UseNTP(false),
-    WireClockStretchLimit(0), ConnectionFailuresThreshold(0),
+    WireClockStretchLimit(0), GlobalSync(false), ConnectionFailuresThreshold(0),
     TimeZone(0), MQTTRetainFlag(false), InitSPI(false),
     Pin_status_led_Inversed(false), deepSleepOnFail(false), UseValueLogger(false),
-    DST_Start(0), DST_End(0)
+    DST_Start(0), DST_End(0), UseRTOSMultitasking(false), Pin_Reset(-1),
+    SyslogFacility(DEFAULT_SYSLOG_FACILITY), StructSize(0)
     {
       for (byte i = 0; i < CONTROLLER_MAX; ++i) {
         Protocol[i] = 0;
@@ -490,7 +675,7 @@ struct SettingsStruct
   boolean       UseSSDP;
   boolean       UseNTP;
   unsigned long WireClockStretchLimit;
-  boolean       _GlobalSync; // obsolete!
+  boolean       GlobalSync;
   unsigned long ConnectionFailuresThreshold;
   int16_t       TimeZone;
   boolean       MQTTRetainFlag;
@@ -525,11 +710,23 @@ struct SettingsStruct
   boolean       Pin_status_led_Inversed;
   boolean       deepSleepOnFail;
   boolean       UseValueLogger;
+  boolean       ArduinoOTAEnable;
   uint16_t      DST_Start;
   uint16_t      DST_End;
+  boolean       UseRTOSMultitasking;
+  int8_t        Pin_Reset;
+  byte          SyslogFacility;
+  uint32_t      StructSize;  // Forced to be 32 bit, to make sure alignment is clear.
+
   //its safe to extend this struct, up to several bytes, default values in config are 0
   //look in misc.ino how config.dat is used because also other stuff is stored in it at different offsets.
   //TODO: document config.dat somewhere here
+
+  // FIXME @TD-er: As discussed in #1292, the CRC for the settings is now disabled.
+  // make sure crc is the last value in the struct
+  // Try to extend settings to make the checksum 4-byte aligned.
+//  uint8_t       ProgmemMd5[16]; // crc of the binary that last saved the struct to file.
+//  uint8_t       md5[16];
 } Settings;
 
 struct ControllerSettingsStruct
@@ -631,6 +828,7 @@ private:
     if (!UseDNS) {
       return true;
     }
+    if (!WiFiConnected()) return false;
     IPAddress tmpIP;
     if (WiFi.hostByName(HostName, tmpIP)) {
       for (byte x = 0; x < 4; x++) {
@@ -725,7 +923,15 @@ struct EventStruct
 };
 
 #define LOG_STRUCT_MESSAGE_SIZE 128
-#define LOG_STRUCT_MESSAGE_LINES 20
+#ifdef ESP32
+  #define LOG_STRUCT_MESSAGE_LINES 30
+#else
+  #if defined(PLUGIN_BUILD_TESTING) || defined(PLUGIN_BUILD_DEV)
+    #define LOG_STRUCT_MESSAGE_LINES 10
+  #else
+    #define LOG_STRUCT_MESSAGE_LINES 15
+  #endif
+#endif
 
 struct LogStruct {
     LogStruct() : write_idx(0), read_idx(0) {
@@ -871,6 +1077,8 @@ struct systemTimerStruct
   byte Par3;
 } systemTimers[SYSTEM_TIMER_MAX];
 
+#define NOTAVAILABLE_SYSTEM_TIMER_ERROR "There are no system timer available, max parallel timers are " STR(SYSTEM_TIMER_MAX)
+
 struct systemCMDTimerStruct
 {
   systemCMDTimerStruct() : timer(0) {}
@@ -915,7 +1123,12 @@ String printWebString = "";
 boolean printToWebJSON = false;
 
 float UserVar[VARS_PER_TASK * TASKS_MAX];
-unsigned long RulesTimer[RULES_TIMER_MAX];
+struct rulesTiemerStatus
+{
+  unsigned long timestamp;
+  unsigned int interval; //interval in millisencond
+  boolean paused;
+} RulesTimer[RULES_TIMER_MAX];
 
 unsigned long timerSensor[TASKS_MAX];
 unsigned long timer100ms;
@@ -926,8 +1139,6 @@ unsigned long timermqtt;
 unsigned long timermqtt_interval;
 unsigned long lastSend;
 unsigned long lastWeb;
-unsigned int NC_Count = 0;
-unsigned int C_Count = 0;
 byte cmd_within_mainloop = 0;
 unsigned long connectionFailures;
 unsigned long wdcounter = 0;
@@ -954,18 +1165,102 @@ String dummyString = "";
 
 byte lastBootCause = BOOT_CAUSE_MANUAL_REBOOT;
 
+#if defined(ESP32)
+enum WiFiDisconnectReason
+{
+    WIFI_DISCONNECT_REASON_UNSPECIFIED              = 1,
+    WIFI_DISCONNECT_REASON_AUTH_EXPIRE              = 2,
+    WIFI_DISCONNECT_REASON_AUTH_LEAVE               = 3,
+    WIFI_DISCONNECT_REASON_ASSOC_EXPIRE             = 4,
+    WIFI_DISCONNECT_REASON_ASSOC_TOOMANY            = 5,
+    WIFI_DISCONNECT_REASON_NOT_AUTHED               = 6,
+    WIFI_DISCONNECT_REASON_NOT_ASSOCED              = 7,
+    WIFI_DISCONNECT_REASON_ASSOC_LEAVE              = 8,
+    WIFI_DISCONNECT_REASON_ASSOC_NOT_AUTHED         = 9,
+    WIFI_DISCONNECT_REASON_DISASSOC_PWRCAP_BAD      = 10,  /* 11h */
+    WIFI_DISCONNECT_REASON_DISASSOC_SUPCHAN_BAD     = 11,  /* 11h */
+    WIFI_DISCONNECT_REASON_IE_INVALID               = 13,  /* 11i */
+    WIFI_DISCONNECT_REASON_MIC_FAILURE              = 14,  /* 11i */
+    WIFI_DISCONNECT_REASON_4WAY_HANDSHAKE_TIMEOUT   = 15,  /* 11i */
+    WIFI_DISCONNECT_REASON_GROUP_KEY_UPDATE_TIMEOUT = 16,  /* 11i */
+    WIFI_DISCONNECT_REASON_IE_IN_4WAY_DIFFERS       = 17,  /* 11i */
+    WIFI_DISCONNECT_REASON_GROUP_CIPHER_INVALID     = 18,  /* 11i */
+    WIFI_DISCONNECT_REASON_PAIRWISE_CIPHER_INVALID  = 19,  /* 11i */
+    WIFI_DISCONNECT_REASON_AKMP_INVALID             = 20,  /* 11i */
+    WIFI_DISCONNECT_REASON_UNSUPP_RSN_IE_VERSION    = 21,  /* 11i */
+    WIFI_DISCONNECT_REASON_INVALID_RSN_IE_CAP       = 22,  /* 11i */
+    WIFI_DISCONNECT_REASON_802_1X_AUTH_FAILED       = 23,  /* 11i */
+    WIFI_DISCONNECT_REASON_CIPHER_SUITE_REJECTED    = 24,  /* 11i */
+
+    WIFI_DISCONNECT_REASON_BEACON_TIMEOUT           = 200,
+    WIFI_DISCONNECT_REASON_NO_AP_FOUND              = 201,
+    WIFI_DISCONNECT_REASON_AUTH_FAIL                = 202,
+    WIFI_DISCONNECT_REASON_ASSOC_FAIL               = 203,
+    WIFI_DISCONNECT_REASON_HANDSHAKE_TIMEOUT        = 204
+};
+#endif
+
+
+#ifndef ESP32
+// To do some reconnection check.
+#include <Ticker.h>
+Ticker connectionCheck;
+#endif
+
+bool reconnectChecker = false;
+void connectionCheckHandler()
+{
+  if (reconnectChecker == false && !WiFiConnected()){
+    reconnectChecker = true;
+    WiFi.reconnect();
+  }
+  else if (WiFiConnected() && reconnectChecker == true){
+    reconnectChecker = false;
+  }
+}
+
+bool useStaticIP();
+
+// WiFi related data
 boolean wifiSetup = false;
 boolean wifiSetupConnect = false;
 uint8_t lastBSSID[6] = {0};
-boolean wifiConnected = false;
-unsigned long wifi_connect_timer = 0;
+uint8_t wifiStatus = ESPEASY_WIFI_DISCONNECTED;
+unsigned long last_wifi_connect_attempt_moment = 0;
 unsigned int wifi_connect_attempt = 0;
+int wifi_reconnects = -1; // First connection attempt is not a reconnect.
 uint8_t lastWiFiSettings = 0;
+String last_ssid;
+bool bssid_changed = false;
+uint8_t last_channel = 0;
+WiFiDisconnectReason lastDisconnectReason = WIFI_DISCONNECT_REASON_UNSPECIFIED;
+unsigned long lastConnectMoment = 0;
+unsigned long lastDisconnectMoment = 0;
+unsigned long lastGetIPmoment = 0;
+unsigned long lastGetScanMoment = 0;
+unsigned long lastConnectedDuration = 0;
+bool intent_to_reboot = false;
+uint8_t lastMacConnectedAPmode[6] = {0};
+uint8_t lastMacDisconnectedAPmode[6] = {0};
 
+//uint32_t scan_done_status = 0;
+uint8_t  scan_done_number = 0;
+//uint8_t  scan_done_scan_id = 0;
 
+// Semaphore like booleans for processing data gathered from WiFi events.
+bool processedConnect = true;
+bool processedDisconnect = true;
+bool processedGetIP = true;
+bool processedConnectAPmode = true;
+bool processedDisconnectAPmode = true;
+bool processedScanDone = true;
 
-unsigned long start = 0;
-unsigned long elapsed = 0;
+bool webserver_state = false;
+bool webserver_init = false;
+
+unsigned long elapsed10ps = 0;
+unsigned long elapsed10psU = 0;
+unsigned long elapsed50ps = 0;
 unsigned long loopCounter = 0;
 unsigned long loopCounterLast = 0;
 unsigned long loopCounterMax = 1;
@@ -974,12 +1269,21 @@ unsigned long dailyResetCounter = 0;
 
 String eventBuffer = "";
 
-uint16_t lowestRAM = 0;
+uint32_t lowestRAM = 0;
 String lowestRAMfunction = "";
 
 bool shouldReboot=false;
 bool firstLoop=true;
 
 boolean activeRuleSets[RULESETS_MAX];
+
+boolean       UseRTOSMultitasking;
+
+void (*MainLoopCall_ptr)(void);
+
+// These wifi event functions must be in a .h-file because otherwise the preprocessor
+// may not filter the ifdef checks properly.
+// Also the functions use a lot of global defined variables, so include at the end of this file.
+#include "ESPEasyWiFiEvent.h"
 
 #endif /* ESPEASY_GLOBALS_H_ */

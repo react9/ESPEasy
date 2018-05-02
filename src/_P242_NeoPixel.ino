@@ -30,6 +30,9 @@ uint8_t Plugin_242_mode = 0;
 uint8_t Plugin_242_saved_mode = 0;
 
 uint8_t Plugin_242_fade_delay = 0; // Since the minimum is 20ms, its 0ms, 20ms or greater.
+
+uint8_t Plugin_242_leds = 0;
+
 bool Plugin_242_running = 0;
 
 String name;
@@ -67,17 +70,23 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
 
     case PLUGIN_WEBFORM_LOAD:
       {
-        char tmpString[128];
-        sprintf_P(tmpString, PSTR("<TR><TD>Led Count:<TD><input type='text' name='plugin_242_leds' size='3' value='%u'>"), Settings.TaskDevicePluginConfig[event->TaskIndex][0]);
-        string += tmpString;
+        addFormSubHeader(F("NeoPixel configuration"));
+        addFormNumericBox(F("Number of LEDs"), F("leds"), CONFIG(1), 0, 1024);
+        addFormNote(F("The total number of LEDs on this strip."));
+
+        //char tmpString[128];
+        //sprintf_P(tmpString, PSTR("<TR><TD>Led Count:<TD><input type='text' name='plugin_242_leds' size='3' value='%u'>"), Plugin_242_leds);
+        //string += tmpString;
         success = true;
         break;
       }
 
     case PLUGIN_WEBFORM_SAVE:
       {
-        String plugin1 = WebServer.arg(F("plugin_242_leds"));
-        Settings.TaskDevicePluginConfig[event->TaskIndex][0] = plugin1.toInt();
+        //String plugin1 = WebServer.arg(F("plugin_242_leds"));
+        //Settings.TaskDevicePluginConfig[event->TaskIndex][0] = plugin1.toInt();
+        CONFIG(1) = getFormItemInt(F("leds"));
+        Plugin_242_leds = CONFIG(1);
         success = true;
         break;
       }
@@ -86,7 +95,8 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
       {
         if (!Plugin_242_pixels)
         {
-          Plugin_242_pixels = new Adafruit_NeoPixel(Settings.TaskDevicePluginConfig[event->TaskIndex][0], Settings.TaskDevicePin1[event->TaskIndex], NEO_GRB + NEO_KHZ800);
+          Plugin_242_leds = CONFIG(1);
+          Plugin_242_pixels = new Adafruit_NeoPixel(Plugin_242_leds, Settings.TaskDevicePin1[event->TaskIndex], NEO_GRB + NEO_KHZ800);
           Plugin_242_pixels->begin(); // This initializes the NeoPixel library.
 
           // Turn of the LED on startup.
@@ -110,14 +120,14 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
         {
           case 0: // Fader
           {
-            SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], true);
+            SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Plugin_242_leds, true);
             Plugin_242_running = false;
             SendState(event, 0);
             break;
           }
           case 1:
           {
-            if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
+            if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Plugin_242_leds, false))
             {
               // Task completed
               Plugin_242_running = false;
@@ -137,7 +147,7 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
             if(Plugin_242_rainbow_stage == 0) // Red
             {
               Plugin_242_target_red = Plugin_242_rainbow_max;Plugin_242_target_green = 0;Plugin_242_target_blue = 0;
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Plugin_242_leds, false))
               {
                 Plugin_242_rainbow_stage++;
                 SendState(event, 0);
@@ -146,7 +156,7 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
             else if(Plugin_242_rainbow_stage == 1) // Orange
             {
               Plugin_242_target_red = Plugin_242_rainbow_max;Plugin_242_target_green = (uint8_t)(Plugin_242_rainbow_max*0.20);Plugin_242_target_blue = 0;
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Plugin_242_leds, false))
               {
                 Plugin_242_rainbow_stage++;
                 SendState(event, 0);
@@ -155,7 +165,7 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
             else if(Plugin_242_rainbow_stage == 2) // Yellow
             {
               Plugin_242_target_red = Plugin_242_rainbow_max;Plugin_242_target_green = Plugin_242_rainbow_max;Plugin_242_target_blue = 0;
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Plugin_242_leds, false))
               {
                 Plugin_242_rainbow_stage++;
                 SendState(event, 0);
@@ -164,7 +174,7 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
             else if(Plugin_242_rainbow_stage == 3) // Green
             {
               Plugin_242_target_red = 0;Plugin_242_target_green = Plugin_242_rainbow_max;Plugin_242_target_blue = 0;
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Plugin_242_leds, false))
               {
                 Plugin_242_rainbow_stage++;
                 SendState(event, 0);
@@ -173,7 +183,7 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
             else if(Plugin_242_rainbow_stage == 4) // Blue
             {
               Plugin_242_target_red = 0;Plugin_242_target_green = 0;Plugin_242_target_blue = Plugin_242_rainbow_max;
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Plugin_242_leds, false))
               {
                 Plugin_242_rainbow_stage++;
                 SendState(event, 0);
@@ -182,7 +192,7 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
             else if(Plugin_242_rainbow_stage == 5) // Purple
             {
               Plugin_242_target_red = Plugin_242_rainbow_max;Plugin_242_target_green = 0;Plugin_242_target_blue = Plugin_242_rainbow_max;
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Plugin_242_leds, false))
               {
                 Plugin_242_rainbow_stage++;
                 SendState(event, 0);
@@ -191,7 +201,7 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
             else if(Plugin_242_rainbow_stage == 6) // Pink
             {
               Plugin_242_target_red = Plugin_242_rainbow_max;Plugin_242_target_green = (uint8_t)(Plugin_242_rainbow_max*.41);Plugin_242_target_blue = (uint8_t)(Plugin_242_rainbow_max*.7);
-              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Settings.TaskDevicePluginConfig[event->TaskIndex][0], false))
+              if(SetFadePixels(Plugin_242_target_red, Plugin_242_target_green, Plugin_242_target_blue, Plugin_242_leds, false))
               {
                 Plugin_242_rainbow_stage++;
                 SendState(event, 0);
@@ -227,6 +237,11 @@ boolean Plugin_242(byte function, struct EventStruct *event, String& string)
             log += event->String1;
             log += " ";
             log += event->String2;
+            addLog(LOG_LEVEL_INFO, log);
+
+            log = "";
+            log += "Total LEDs: ";
+            log += Plugin_242_leds;
             addLog(LOG_LEVEL_INFO, log);
 
             StaticJsonBuffer<200> jsonBuffer;
@@ -394,7 +409,7 @@ bool SetFadePixels(uint8_t r, uint8_t g, uint8_t b, uint8_t leds, bool force)
   log += " | ";
   log += b;
 
-  //addLog(LOG_LEVEL_INFO, log);
+  addLog(LOG_LEVEL_INFO, log);
 
   if(force) {
     log = "NeoPixel: Forced SetFadePixels";
@@ -406,8 +421,15 @@ bool SetFadePixels(uint8_t r, uint8_t g, uint8_t b, uint8_t leds, bool force)
 
     for (int i = 0; i < leds; i++)
     {
+      log = "NeoPixel: Setting color for led: ";
+      log += i;
+      addLog(LOG_LEVEL_INFO, log);
+
       Plugin_242_pixels->setPixelColor(i, Plugin_242_pixels->Color(r, g, b));
     }
+    log = "NeoPixel: Calling Show()";
+    addLog(LOG_LEVEL_INFO, log);
+
     Plugin_242_pixels->show();
     return true;
   }

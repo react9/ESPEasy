@@ -1,3 +1,4 @@
+#ifdef USES_C001
 //#######################################################################################################
 //########################### Controller Plugin 001: Domoticz HTTP ######################################
 //#######################################################################################################
@@ -5,6 +6,7 @@
 #define CPLUGIN_001
 #define CPLUGIN_ID_001         1
 #define CPLUGIN_NAME_001       "Domoticz HTTP"
+
 
 boolean CPlugin_001(byte function, struct EventStruct *event, String& string)
 {
@@ -164,3 +166,4 @@ boolean CPlugin_001(byte function, struct EventStruct *event, String& string)
   }
   return success;
 }
+#endif

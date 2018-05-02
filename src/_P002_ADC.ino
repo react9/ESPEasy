@@ -1,3 +1,4 @@
+#ifdef USES_P002
 //#######################################################################################################
 //#################################### Plugin 002: Analog ###############################################
 //#######################################################################################################
@@ -47,19 +48,24 @@ boolean Plugin_002(byte function, struct EventStruct *event, String& string)
 
     case PLUGIN_WEBFORM_LOAD:
       {
-        addFormCheckBox(string, F("Oversampling"), F("plugin_002_oversampling"), Settings.TaskDevicePluginConfig[event->TaskIndex][0]);
+        #if defined(ESP32)
+          addHtml(F("<TR><TD>Analog Pin:<TD>"));
+          addPinSelect(false, "taskdevicepin1", Settings.TaskDevicePin1[event->TaskIndex]);
+        #endif
 
-        addFormSubHeader(string, F("Two Point Calibration"));
+        addFormCheckBox(F("Oversampling"), F("plugin_002_oversampling"), Settings.TaskDevicePluginConfig[event->TaskIndex][0]);
 
-        addFormCheckBox(string, F("Calibration Enabled"), F("plugin_002_cal"), Settings.TaskDevicePluginConfig[event->TaskIndex][3]);
+        addFormSubHeader(F("Two Point Calibration"));
 
-        addFormNumericBox(string, F("Point 1"), F("plugin_002_adc1"), Settings.TaskDevicePluginConfigLong[event->TaskIndex][0], 0, 1023);
-        string += F(" &#8793; ");
-        addTextBox(string, F("plugin_002_out1"), String(Settings.TaskDevicePluginConfigFloat[event->TaskIndex][0], 3), 10);
+        addFormCheckBox(F("Calibration Enabled"), F("plugin_002_cal"), Settings.TaskDevicePluginConfig[event->TaskIndex][3]);
 
-        addFormNumericBox(string, F("Point 2"), F("plugin_002_adc2"), Settings.TaskDevicePluginConfigLong[event->TaskIndex][1], 0, 1023);
-        string += F(" &#8793; ");
-        addTextBox(string, F("plugin_002_out2"), String(Settings.TaskDevicePluginConfigFloat[event->TaskIndex][1], 3), 10);
+        addFormNumericBox(F("Point 1"), F("plugin_002_adc1"), Settings.TaskDevicePluginConfigLong[event->TaskIndex][0], 0, 1023);
+        addHtml(F(" &#8793; "));
+        addTextBox(F("plugin_002_out1"), String(Settings.TaskDevicePluginConfigFloat[event->TaskIndex][0], 3), 10);
+
+        addFormNumericBox(F("Point 2"), F("plugin_002_adc2"), Settings.TaskDevicePluginConfigLong[event->TaskIndex][1], 0, 1023);
+        addHtml(F(" &#8793; "));
+        addTextBox(F("plugin_002_out2"), String(Settings.TaskDevicePluginConfigFloat[event->TaskIndex][1], 3), 10);
 
         success = true;
         break;
@@ -85,7 +91,12 @@ boolean Plugin_002(byte function, struct EventStruct *event, String& string)
       {
         if (Settings.TaskDevicePluginConfig[event->TaskIndex][0])   //Oversampling?
         {
-          Plugin_002_OversamplingValue += analogRead(A0);
+          #if defined(ESP8266)
+            Plugin_002_OversamplingValue += analogRead(A0);
+          #endif
+          #if defined(ESP32)
+            Plugin_002_OversamplingValue += analogRead(Settings.TaskDevicePin1[event->TaskIndex]);
+          #endif
           Plugin_002_OversamplingCount ++;
         }
         success = true;
@@ -106,7 +117,12 @@ boolean Plugin_002(byte function, struct EventStruct *event, String& string)
         }
         else
         {
-          int16_t value = analogRead(A0);
+          #if defined(ESP8266)
+            int16_t value = analogRead(A0);
+          #endif
+          #if defined(ESP32)
+            int16_t value = analogRead(Settings.TaskDevicePin1[event->TaskIndex]);
+          #endif
           UserVar[event->BaseVarIndex] = (float)value;
 
           log += value;
@@ -135,3 +151,4 @@ boolean Plugin_002(byte function, struct EventStruct *event, String& string)
   }
   return success;
 }
+#endif // USES_P002

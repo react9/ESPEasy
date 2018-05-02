@@ -1,44 +1,36 @@
-# ESPEasy (v2.0 stable branch)
+# ESPEasy (development branch)
 
-Build status: [![Build Status](https://travis-ci.org/letscontrolit/ESPEasy.svg?branch=v2.0)](https://travis-ci.org/letscontrolit/ESPEasy)
+Build status: [![Build Status](https://travis-ci.org/letscontrolit/ESPEasy.svg?branch=mega)](https://travis-ci.org/letscontrolit/ESPEasy)
 
 Introduction and wiki: https://www.letscontrolit.com/wiki/index.php/ESPEasy#Introduction
 
-**v2.0**
-:warning:This is the stable branch for the next upcoming ESPeasy release (2.0.0).:warning:
+**MEGA**
+:warning:This is the development branch of ESPEasy. All new untested features go into this branch. If you want to do a bugfix, do it on the stable branch, we will merge the fix to the development branch as well.:warning:
 
-If you're living on the edge and want the latest features and bugs, go to the development branch: https://github.com/letscontrolit/ESPEasy/tree/mega
-
-If you're a developer: Bug fixes go into this v2.0 branch, we will merge them back to the development branch.
+Next stable branch: https://github.com/letscontrolit/ESPEasy/tree/v2.0  (bug fixes only, since oct 2017))
 
 Check here to learn how to use this branch and help us improving ESPEasy: http://www.letscontrolit.com/wiki/index.php/ESPEasy#Source_code_development
 
-## Versions
 
-* v2.0-YYYYMMDD: These are the nightly builds. Once a day this is automaticly released whenever there are new changes. (this replaces the manual v2.0-devX release system)
-* v2.0.0-betaX: as soon as we THINK everything is fixed, we start beta testing.
-* v2.0.0-rcX: release candidates (almost stable)
-* v2.0.0: This will be the first stable release. After this we will use more standard numbering. Next bugfix release will probably be 2.0.1.
+## Automated binary releases
 
-## Firmware binary releases
+Every night our build-bot will build a new binary release: https://github.com/letscontrolit/ESPEasy/releases
 
-Binary development releases are here: https://github.com/letscontrolit/ESPEasy/releases
+The releases are named something like 'mega-20180102' (last number is the build date)
 
-Depending on your needs, we release different types of files.
-
-This uses version v2.0-20181001 as an example.
+Depending on your needs, we release different types of files:
 
 Firmware name                                 | Hardware                | Included plugins            |
 ----------------------------------------------|-------------------------|-----------------------------|
-ESPEasy_v2.0-20181001_normal_ESP8266_1024.bin  | ESP8266 with 1Mb flash  | Stable                      |
-ESPEasy_v2.0-20181001_test_ESP8266_1024.bin    | ESP8266 with 1Mb flash  | Stable + Test               |
-ESPEasy_v2.0-20181001_dev_ESP8266_1024.bin     | ESP8266 with 1Mb flash  | Stable + Test + Development |
-ESPEasy_v2.0-20181001_normal_ESP8266_4096.bin  | ESP8266 with 4Mb flash  | Stable                      |
-ESPEasy_v2.0-20181001_test_ESP8266_4096.bin    | ESP8266 with 4Mb flash  | Stable + Test               |
-ESPEasy_v2.0-20181001_dev_ESP8266_4096.bin     | ESP8266 with 4Mb flash  | Stable + Test + Development |
-ESPEasy_v2.0-20181001_normal_ESP8285_1024.bin  | ESP8285 with 1Mb flash  | Stable                      |
-ESPEasy_v2.0-20181001_test_ESP8285_1024.bin    | ESP8285 with 1Mb flash  | Stable + Test               |
-ESPEasy_v2.0-20181001_dev_ESP8285_1024.bin     | ESP8285 with 1Mb flash  | Stable + Test + Development |
+ESPEasy_mega-20180102_normal_ESP8266_1024.bin  | ESP8266 with 1Mb flash  | Stable                      |
+ESPEasy_mega-20180102_test_ESP8266_1024.bin    | ESP8266 with 1Mb flash  | Stable + Test               |
+ESPEasy_mega-20180102_dev_ESP8266_1024.bin     | ESP8266 with 1Mb flash  | Stable + Test + Development |
+ESPEasy_mega-20180102_normal_ESP8266_4096.bin  | ESP8266 with 4Mb flash  | Stable                      |
+ESPEasy_mega-20180102_test_ESP8266_4096.bin    | ESP8266 with 4Mb flash  | Stable + Test               |
+ESPEasy_mega-20180102_dev_ESP8266_4096.bin     | ESP8266 with 4Mb flash  | Stable + Test + Development |
+ESPEasy_mega-20180102_normal_ESP8285_1024.bin  | ESP8285 with 1Mb flash  | Stable                      |
+ESPEasy_mega-20180102_test_ESP8285_1024.bin    | ESP8285 with 1Mb flash  | Stable + Test               |
+ESPEasy_mega-20180102_dev_ESP8285_1024.bin     | ESP8285 with 1Mb flash  | Stable + Test + Development |
 
 ## More info
 
