@@ -124,7 +124,6 @@ boolean CPlugin_005(byte function, struct EventStruct *event, String& string)
         {
           String tmppubname = pubname;
           tmppubname.replace(F("%valname%"), ExtraTaskSettings.TaskDeviceValueNames[0]);
-          tmppubname += "State";
           addLog(LOG_LEVEL_INFO, "Process custom sensor type.");
           MQTTpublish(event->ControllerIndex, tmppubname.c_str(), event->String3.c_str(), Settings.MQTTRetainFlag);
         }
