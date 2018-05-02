@@ -1,3 +1,5 @@
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
 
 #ifndef ESPEASY_GLOBALS_H_
 #define ESPEASY_GLOBALS_H_
@@ -54,6 +56,13 @@
 //   8 = Generic HTTP
 //   9 = FHEM HTTP
 
+#define DEFAULT_PIN_I2C_SDA              4
+#define DEFAULT_PIN_I2C_SCL              5
+
+#define DEFAULT_PIN_STATUS_LED           -1
+#define DEFAULT_PIN_STATUS_LED_INVERSED  true
+
+
 
 // --- Advanced Settings ---------------------------------------------------------------------------------
 #if defined(ESP32)
@@ -83,6 +92,8 @@
 
 #define DEFAULT_USE_SERIAL                      true    // (true|false) Enable Logging to the Serial Port
 #define DEFAULT_SERIAL_BAUD                     115200  // Serial Port Baud Rate
+
+#define DEFAULT_SYSLOG_FACILITY 	0 	// kern
 
 /*
 // --- Experimental Advanced Settings (NOT ACTIVES at this time) ------------------------------------
@@ -154,7 +165,7 @@
   #define VERSION                             3 // Change in config.dat mapping needs a full reset
 #endif
 
-#define BUILD                           20101 // git version 2.1.01
+#define BUILD                           20102 // git version 2.1.02
 #if defined(ESP8266)
   #define BUILD_NOTES                 " - Mega"
 #endif
@@ -468,6 +479,7 @@ WiFiClient mqtt;
 PubSubClient MQTTclient(mqtt);
 bool MQTTclient_should_reconnect = true;
 bool MQTTclient_connected = false;
+int mqtt_reconnect_count = 0;
 
 // udp protocol stuff (syslog, global sync, node info list, ntp time)
 WiFiUDP portUDP;
@@ -527,6 +539,8 @@ enum Command {
   cmd_TaskRun,
   cmd_TaskValueSet,
   cmd_TimerSet,
+  cmd_TimerPause,
+  cmd_TimerResume,
   cmd_udptest,
   cmd_Unit,
   cmd_wdconfig,
@@ -545,6 +559,7 @@ enum Command {
 // Forward declarations.
 Command commandStringToEnum(const char * cmd);
 bool WiFiConnected(uint32_t timeout_ms);
+bool WiFiConnected();
 bool hostReachable(const IPAddress& ip);
 bool hostReachable(const String& hostname);
 void formatMAC(const uint8_t* mac, char (&strMAC)[20]);
@@ -593,7 +608,8 @@ struct SettingsStruct
     WireClockStretchLimit(0), GlobalSync(false), ConnectionFailuresThreshold(0),
     TimeZone(0), MQTTRetainFlag(false), InitSPI(false),
     Pin_status_led_Inversed(false), deepSleepOnFail(false), UseValueLogger(false),
-    DST_Start(0), DST_End(0)
+    DST_Start(0), DST_End(0), UseRTOSMultitasking(false), Pin_Reset(-1),
+    SyslogFacility(DEFAULT_SYSLOG_FACILITY), StructSize(0)
     {
       for (byte i = 0; i < CONTROLLER_MAX; ++i) {
         Protocol[i] = 0;
@@ -699,14 +715,18 @@ struct SettingsStruct
   uint16_t      DST_End;
   boolean       UseRTOSMultitasking;
   int8_t        Pin_Reset;
-
+  byte          SyslogFacility;
+  uint32_t      StructSize;  // Forced to be 32 bit, to make sure alignment is clear.
 
   //its safe to extend this struct, up to several bytes, default values in config are 0
   //look in misc.ino how config.dat is used because also other stuff is stored in it at different offsets.
   //TODO: document config.dat somewhere here
+
+  // FIXME @TD-er: As discussed in #1292, the CRC for the settings is now disabled.
   // make sure crc is the last value in the struct
-  uint8_t       ProgmemMd5[16]; // crc of the binary that last saved the struct to file.
-  uint8_t       md5[16];
+  // Try to extend settings to make the checksum 4-byte aligned.
+//  uint8_t       ProgmemMd5[16]; // crc of the binary that last saved the struct to file.
+//  uint8_t       md5[16];
 } Settings;
 
 struct ControllerSettingsStruct
@@ -808,6 +828,7 @@ private:
     if (!UseDNS) {
       return true;
     }
+    if (!WiFiConnected()) return false;
     IPAddress tmpIP;
     if (WiFi.hostByName(HostName, tmpIP)) {
       for (byte x = 0; x < 4; x++) {
@@ -902,10 +923,14 @@ struct EventStruct
 };
 
 #define LOG_STRUCT_MESSAGE_SIZE 128
-#if defined(PLUGIN_BUILD_TESTING) || defined(PLUGIN_BUILD_DEV)
-  #define LOG_STRUCT_MESSAGE_LINES 10
+#ifdef ESP32
+  #define LOG_STRUCT_MESSAGE_LINES 30
 #else
-  #define LOG_STRUCT_MESSAGE_LINES 15
+  #if defined(PLUGIN_BUILD_TESTING) || defined(PLUGIN_BUILD_DEV)
+    #define LOG_STRUCT_MESSAGE_LINES 10
+  #else
+    #define LOG_STRUCT_MESSAGE_LINES 15
+  #endif
 #endif
 
 struct LogStruct {
@@ -1052,6 +1077,8 @@ struct systemTimerStruct
   byte Par3;
 } systemTimers[SYSTEM_TIMER_MAX];
 
+#define NOTAVAILABLE_SYSTEM_TIMER_ERROR "There are no system timer available, max parallel timers are " STR(SYSTEM_TIMER_MAX)
+
 struct systemCMDTimerStruct
 {
   systemCMDTimerStruct() : timer(0) {}
@@ -1096,7 +1123,12 @@ String printWebString = "";
 boolean printToWebJSON = false;
 
 float UserVar[VARS_PER_TASK * TASKS_MAX];
-unsigned long RulesTimer[RULES_TIMER_MAX];
+struct rulesTiemerStatus
+{
+  unsigned long timestamp;
+  unsigned int interval; //interval in millisencond
+  boolean paused;
+} RulesTimer[RULES_TIMER_MAX];
 
 unsigned long timerSensor[TASKS_MAX];
 unsigned long timer100ms;
@@ -1107,8 +1139,6 @@ unsigned long timermqtt;
 unsigned long timermqtt_interval;
 unsigned long lastSend;
 unsigned long lastWeb;
-unsigned int NC_Count = 0;
-unsigned int C_Count = 0;
 byte cmd_within_mainloop = 0;
 unsigned long connectionFailures;
 unsigned long wdcounter = 0;
@@ -1170,23 +1200,25 @@ enum WiFiDisconnectReason
 };
 #endif
 
-enum WifiState {
-  WifiOff,
-  WifiStart,
-  WifiTryConnect,
-  WifiConnectionFailed,
-  WifiClientConnectAP,
-  WifiClientDisconnectAP,
-  WifiCredentialsChanged,
-  WifiConnectSuccess,
-  WifiDisableAP,
-  WifiEnableAP,
-  WifiStartScan,
-};
 
-WifiState currentWifiState = WifiStart;
+#ifndef ESP32
+// To do some reconnection check.
+#include <Ticker.h>
+Ticker connectionCheck;
+#endif
 
-void setWifiState(WifiState state);
+bool reconnectChecker = false;
+void connectionCheckHandler()
+{
+  if (reconnectChecker == false && !WiFiConnected()){
+    reconnectChecker = true;
+    WiFi.reconnect();
+  }
+  else if (WiFiConnected() && reconnectChecker == true){
+    reconnectChecker = false;
+  }
+}
+
 bool useStaticIP();
 
 // WiFi related data
@@ -1196,6 +1228,7 @@ uint8_t lastBSSID[6] = {0};
 uint8_t wifiStatus = ESPEASY_WIFI_DISCONNECTED;
 unsigned long last_wifi_connect_attempt_moment = 0;
 unsigned int wifi_connect_attempt = 0;
+int wifi_reconnects = -1; // First connection attempt is not a reconnect.
 uint8_t lastWiFiSettings = 0;
 String last_ssid;
 bool bssid_changed = false;
@@ -1222,8 +1255,12 @@ bool processedConnectAPmode = true;
 bool processedDisconnectAPmode = true;
 bool processedScanDone = true;
 
-unsigned long start = 0;
-unsigned long elapsed = 0;
+bool webserver_state = false;
+bool webserver_init = false;
+
+unsigned long elapsed10ps = 0;
+unsigned long elapsed10psU = 0;
+unsigned long elapsed50ps = 0;
 unsigned long loopCounter = 0;
 unsigned long loopCounterLast = 0;
 unsigned long loopCounterMax = 1;
@@ -1241,6 +1278,8 @@ bool firstLoop=true;
 boolean activeRuleSets[RULESETS_MAX];
 
 boolean       UseRTOSMultitasking;
+
+void (*MainLoopCall_ptr)(void);
 
 // These wifi event functions must be in a .h-file because otherwise the preprocessor
 // may not filter the ifdef checks properly.

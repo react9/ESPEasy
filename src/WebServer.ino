@@ -390,19 +390,23 @@ static const char pgDefaultCSS[] PROGMEM = {
     // buttons
     ".button {margin: 4px; padding: 4px 16px; background-color: #07D; color: #FFF; text-decoration: none; border-radius: 4px; border: none;}"
     ".button.link { }"
-    ".button.help {padding: 2px 4px; border: solid 1px #FFF; border-radius: 50%; }"
+    ".button.help {padding: 2px 4px; border-style: solid; border-width: 1px; border-color: gray; border-radius: 50%; }"
     ".button:hover {background: #369; }"
+    // inputs, select, tetarea generall
+    "input, select, textarea {margin: 4px; padding: 4px 8px; border-radius: 4px; background-color: #eee; border-style: solid; border-width: 1px; border-color: gray;}"
     // inputs
-    "input.wide {max-width: 500px; width:80%;}"
-    "input.widenumber {max-width: 500px; width:100px;}"
+    "input:hover {background-color: #ccc; }"
+    "input.wide {max-width: 500px; width:80%; }"
+    "input.widenumber {max-width: 500px; width:100px; }"
     // select
-    "#selectwidth {max-width: 500px; width:80%;}"
+    "#selectwidth {max-width: 500px; width:80%; padding: 4px 8px;}"
+    "select:hover {background-color: #ccc; }"
     // custom checkboxes
-    ".container {display: block; position: relative; padding-left: 35px; margin-bottom: 12px; cursor: pointer; font-size: 12pt; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }"
+    ".container {display: block; padding-left: 35px; margin-left: 4px; margin-top: 0px; position: relative; cursor: pointer; font-size: 12pt; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }"
     // Hide the browser's default checkbox
     ".container input {position: absolute; opacity: 0; cursor: pointer;  }"
     // Create a custom checkbox
-    ".checkmark {position: absolute; top: 0; left: 0; height: 25px;  width: 25px;  background-color: #eee; border-style: solid; border-width: 1px; border-color: gray; }"
+    ".checkmark {position: absolute; top: 0; left: 0; height: 25px;  width: 25px;  background-color: #eee; border-style: solid; border-width: 1px; border-color: gray;  border-radius: 4px;}"
     // On mouse-over, add a grey background color
     ".container:hover input ~ .checkmark {background-color: #ccc; }"
     // When the checkbox is checked, add a blue background
@@ -413,18 +417,49 @@ static const char pgDefaultCSS[] PROGMEM = {
     ".container input:checked ~ .checkmark:after {display: block; }"
     // Style the checkmark/indicator
     ".container .checkmark:after {left: 7px; top: 3px; width: 5px; height: 10px; border: solid white; border-width: 0 3px 3px 0; -webkit-transform: rotate(45deg); -ms-transform: rotate(45deg); transform: rotate(45deg); }"
+
+    // custom radio buttons
+    ".container2 {display: block; padding-left: 35px; margin-left: 9px; margin-bottom: 20px; position: relative; cursor: pointer; font-size: 12pt; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }"
+    // Hide the browser's default radio button
+    ".container2 input {position: absolute; opacity: 0; cursor: pointer;  }"
+    // Create a custom radio button
+    ".dotmark {position: absolute; top: 0; left: 0; height: 26px;  width: 26px;  background-color: #eee; border-style: solid; border-width: 1px; border-color: gray; border-radius: 50%;}"
+    // On mouse-over, add a grey background color
+    ".container2:hover input ~ .dotmark {background-color: #ccc; }"
+    // When the radio button is checked, add a blue background
+    ".container2 input:checked ~ .dotmark { background-color: #07D;}"
+    // Create the dot/indicator (hidden when not checked)
+    ".dotmark:after {content: ''; position: absolute; display: none; }"
+    // Show the dot when checked
+    ".container2 input:checked ~ .dotmark:after {display: block; }"
+    // Style the dot/indicator
+    ".container2 .dotmark:after {top: 8px; left: 8px; width: 8px; height: 8px;	border-radius: 50%;	background: white; }"
+
+    // toast messsage
+    "#toastmessage {visibility: hidden; min-width: 250px; margin-left: -125px; background-color: #07D;"
+        "color: #fff;  text-align: center;  border-radius: 4px;  padding: 16px;  position: fixed;"
+        "z-index: 1; left: 282px; bottom: 30%;  font-size: 17px;  border-style: solid; border-width: 1px; border-color: gray;}"
+    "#toastmessage.show {visibility: visible; -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s; animation: fadein 0.5s, fadeout 0.5s 2.5s; }"
+    // fade in
+    "@-webkit-keyframes fadein {from {bottom: 20%; opacity: 0;} to {bottom: 30%; opacity: 0.9;} }"
+    "@keyframes fadein {from {bottom: 20%; opacity: 0;} to {bottom: 30%; opacity: 0.9;} }"
+    // fade out
+    "@-webkit-keyframes fadeout {from {bottom: 30%; opacity: 0.9;} to {bottom: 0; opacity: 0;} }"
+    "@keyframes fadeout {from {bottom: 30%; opacity: 0.9;} to {bottom: 0; opacity: 0;} }"
+
     // text textarea
-    "textarea {border:1px solid #999999; max-width: 1000px; width:80%; margin:5px 0; padding:2px; }"
+    "textarea {max-width: 1000px; width:80%; padding: 4px 8px;}"
+    "textarea:hover {background-color: #ccc; }"
     // tables
     "table.normal th {padding: 6px; background-color: #444; color: #FFF; border-color: #888; font-weight: bold; }"
-    "table.normal td {padding: 4px; }"
+    "table.normal td {padding: 4px; height: 30px;}"
     "table.normal tr {padding: 4px; }"
     "table.normal {color: #000; width: 100%; min-width: 420px; border-collapse: collapse; }"
     //every second row
     "table.multirow th {padding: 6px; background-color: #444; color: #FFF; border-color: #888; font-weight: bold; }"
-    "table.multirow td {padding: 4px; text-align: center; }"
+    "table.multirow td {padding: 4px; text-align: center;  height: 30px;}"
     "table.multirow tr {padding: 4px; }"
-      "table.multirow tr:nth-child(even){background-color: #cfd6e4; }"
+      "table.multirow tr:nth-child(even){background-color: #DEE6FF; }"
     "table.multirow {color: #000; width: 100%; min-width: 420px; border-collapse: collapse; }"
     // inside a form
     ".note {color: #444; font-style: italic; }"
@@ -471,6 +506,13 @@ void addHtmlError(String error){
     TXBuffer += error;
     TXBuffer += F("</div>");
   }
+  else
+  {
+    TXBuffer += F("<script>function toasting() {var x = document.getElementById('toastmessage'); x.innerHTML = '");
+    // we can push custom messages here in future releases...
+    TXBuffer += F("Submitted");
+    TXBuffer += F("'; x.className = 'show'; setTimeout(function(){x.innerHTML = '';  x.className = x.className.replace('show', ''); }, 2000);} </script>");
+  }
 }
 
 void addHtml(const String html) {
@@ -487,6 +529,7 @@ void WebServerInit()
   WebServer.on("/devices", handle_devices);
   WebServer.on("/notifications", handle_notifications);
   WebServer.on("/log", handle_log);
+  WebServer.on("/logjson", handle_log_JSON);
   WebServer.on("/tools", handle_tools);
   WebServer.on("/i2cscanner", handle_i2cscanner);
   WebServer.on("/wifiscanner", handle_wifiscanner);
@@ -523,11 +566,24 @@ void WebServerInit()
     SSDP_begin();
   }
   #endif
-
-  WebServer.begin();
 }
 
-
+void setWebserverRunning(bool state) {
+  if (webserver_state == state)
+    return;
+  if (state) {
+    if (!webserver_init) {
+      WebServerInit();
+      webserver_init = true;
+    }
+    WebServer.begin();
+    addLog(LOG_LEVEL_INFO, F("Webserver: start"));
+  } else {
+    WebServer.stop();
+    addLog(LOG_LEVEL_INFO, F("Webserver: stop"));
+  }
+  webserver_state = state;
+}
 
 
 void getWebPageTemplateDefault(const String& tmplName, String& tmpl)
@@ -583,6 +639,22 @@ void getWebPageTemplateDefault(const String& tmplName, String& tmpl)
                 "<h6>Powered by <a href='http://www.letscontrolit.com' style='font-size: 15px; text-decoration: none'>www.letscontrolit.com</a></h6>"
               "</footer>"
               "</body>"
+            );
+  }
+  else if (tmplName == F("TmplDsh"))
+  {
+    tmpl += F(
+      "<!DOCTYPE html><html lang='en'>"
+      "<head>"
+        "<meta charset='utf-8'/>"
+        "<title>{{name}}</title>"
+        "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+        "{{js}}"
+        "{{css}}"
+        "</head>"
+        "<body>"
+        "{{content}}"
+        "</body></html>"
             );
   }
   else   //all other template names e.g. TmplStd
@@ -898,7 +970,8 @@ void handle_root() {
       TXBuffer += WifiGetHostname();
       TXBuffer += F(".local</a><TD><TD><TD>");
     #endif
-
+    TXBuffer += F("<TR><TD><TD>");
+    addButton(F("sysinfo"), F("More info"));
 
     TXBuffer += F("</table><BR><BR><table class='multirow'><TR><TH>Node List:<TH>Name<TH>Build<TH>Type<TH>IP<TH>Age");
     for (byte x = 0; x < UNIT_MAX; x++)
@@ -977,7 +1050,7 @@ void handle_root() {
       String log = F("     : factory reset...");
       addLog(LOG_LEVEL_INFO, log);
       cmd_within_mainloop = CMD_REBOOT;
-      TXBuffer+= F("OK. Please wait > 1 min and connect to Acces point. PW=configesp, URL=192.168.4.1");
+      TXBuffer+= F("OK. Please wait > 1 min and connect to Acces point.<BR><BR>PW=configesp<BR>URL=<a href='http://192.168.4.1'>192.168.4.1</a>");
       TXBuffer.endStream();
       ExecuteCommand(VALUE_SOURCE_HTTP, sCommand.c_str());
     }
@@ -1644,7 +1717,6 @@ void handle_hardware() {
 
   TXBuffer += F("<form  method='post'><table class='normal'><TR><TH style='width:150px;' align='left'>Hardware Settings<TH align='left'>");
   addHelpButton(F("ESPEasy#Hardware_page"));
-  TXBuffer += F("<TR><TD>");
 
   addFormSubHeader(F("Wifi Status LED"));
   addFormPinSelect(F("GPIO &rarr; LED"), "pled", Settings.Pin_status_led);
@@ -2441,7 +2513,7 @@ void addPinSelect(boolean forI2C, String name,  int choice)
   optionValues[4] = 3;
   optionValues[5] = 4;
   optionValues[6] = 5;
-  optionValues[7] = 7;
+  optionValues[7] = 6;
   optionValues[8] = 7;
   optionValues[9] = 8;
   optionValues[10] = 9;
@@ -2666,7 +2738,7 @@ void addButton(const String &url, const String &label)
 
 void addSubmitButton()
 {
-  TXBuffer += F("<input class='button link' type='submit' value='Submit'>");
+  TXBuffer += F("<input class='button link' type='submit' value='Submit'><div id='toastmessage'></div></div><script type='text/javascript'>toasting();</script>");
 }
 
 //add submit button with different label and name
@@ -2676,9 +2748,23 @@ void addSubmitButton(const String &value, const String &name)
   TXBuffer += value;
   TXBuffer += F("' name='");
   TXBuffer += name;
-  TXBuffer += F("'>");
+  TXBuffer += F("'><div id='toastmessage'></div><script type='text/javascript'>toasting();</script>");
 }
 
+// add copy to clipboard button
+void addCopyButton(const String &value, const String &delimiter, const String &name)
+{
+  TXBuffer += F("<script>function setClipboard() { var clipboard = ''; max_loop = 100; for (var i = 1; i < max_loop; i++){ var cur_id = '");
+  TXBuffer += value;
+  TXBuffer += F("_' + i; var test = document.getElementById(cur_id); if (test == null){ i = max_loop + 1;  } else { clipboard += test.innerHTML.replace(/<br\\s*\\/?>/gim,'\\n') + '");
+  TXBuffer += delimiter;
+  TXBuffer += F("'; } }");
+  TXBuffer += F("var tempInput = document.createElement('textarea'); tempInput.style = 'position: absolute; left: -1000px; top: -1000px'; tempInput.innerHTML = clipboard;");
+  TXBuffer += F("document.body.appendChild(tempInput); tempInput.select(); document.execCommand('copy'); document.body.removeChild(tempInput); alert('Copied: \"' + clipboard + '\" to clipboard!') }</script>");
+  TXBuffer += F("<button class='button link' onclick='setClipboard()'>");
+  TXBuffer += name;
+  TXBuffer += F("</button>");
+}
 
 
 //********************************************************************************
@@ -2973,17 +3059,33 @@ void handle_log() {
   sendHeadandTail(F("TmplStd"),_HEAD);
 
   TXBuffer += F("<script>function RefreshMe(){window.location = window.location}setTimeout('RefreshMe()', 3000);</script>");
-  TXBuffer += F("<table class='normal'><TR><TH style='width:150px;' align='left'>Log<TR><TD>");
+  TXBuffer += F("<table class='normal'><TR><TH style='width:150px;' align='left'>Log<TR><TD id='copyText_1'>");
   for (int i = 0; i< LOG_STRUCT_MESSAGE_LINES; i++){
     Logging.get(TXBuffer.buf, F("<BR>"),i);
 
   }
   //Logging.getAll(TXBuffer.buf, F("<BR>"));
   TXBuffer += F("</table>");
+  addCopyButton(F("copyText"), F(""), F("Copy log to clipboard"));
   sendHeadandTail(F("TmplStd"),_TAIL);
   TXBuffer.endStream();
 }
 
+//********************************************************************************
+// Web Interface JSON log page
+//********************************************************************************
+void handle_log_JSON() {
+  // TODO TD-er: This really should use TXBuffer.
+  String reply;
+  reply.reserve(LOG_STRUCT_MESSAGE_SIZE * LOG_STRUCT_MESSAGE_LINES / 2);
+  reply += F("{\"Log entries\": \"");
+  while (Logging.get(reply, F("<BR>"))) {
+    // Do we need to do something here and maybe limit number of lines at once?
+  }
+  reply += F("\"}\n");
+  WebServer.sendHeader("Access-Control-Allow-Origin","*");
+  WebServer.send(200, "application/json", reply);
+}
 
 //********************************************************************************
 // Web Interface debug page
@@ -3444,6 +3546,14 @@ void handle_control() {
     WebServer.send(200, "text/html", "OK");
     return;
   }
+  else if (command.equalsIgnoreCase(F("taskrun")) ||
+           command.equalsIgnoreCase(F("taskvalueset")) ||
+           command.equalsIgnoreCase(F("rules"))) {
+    addLog(LOG_LEVEL_INFO,String(F("HTTP : ")) + webrequest);
+    ExecuteCommand(VALUE_SOURCE_HTTP,webrequest.c_str());
+    WebServer.send(200, "text/html", "OK");
+    return;
+  }
 
   struct EventStruct TempEvent;
   parseCommandString(&TempEvent, webrequest);
@@ -3486,6 +3596,12 @@ void handle_json()
     reply += F(",\n");
     reply += to_json_object_value(F("Git Build"), String(BUILD_GIT));
     reply += F(",\n");
+    reply += to_json_object_value(F("System libraries"), getSystemLibraryString());
+    reply += F(",\n");
+    reply += to_json_object_value(F("Plugins"), String(deviceCount + 1));
+    reply += F(",\n");
+    reply += to_json_object_value(F("Plugin description"), getPluginDescriptionString());
+    reply += F(",\n");
     reply += to_json_object_value(F("Local time"), getDateTimeString('-',':',' '));
     reply += F(",\n");
     reply += to_json_object_value(F("Unit"), String(Settings.Unit));
@@ -3493,6 +3609,8 @@ void handle_json()
     reply += to_json_object_value(F("Name"), String(Settings.Name));
     reply += F(",\n");
     reply += to_json_object_value(F("Uptime"), String(wdcounter / 2));
+    reply += F(",\n");
+    reply += to_json_object_value(F("Last boot cause"), getLastBootCauseString());
     reply += F(",\n");
 
     if (wdcounter > 0)
@@ -3510,6 +3628,8 @@ void handle_json()
     #if defined(ESP8266)
       reply += to_json_object_value(F("Hostname"), WiFi.hostname());
     #endif
+    reply += F(",\n");
+    reply += to_json_object_value(F("IP config"), useStaticIP() ? F("Static") : F("DHCP"));
     reply += F(",\n");
     reply += to_json_object_value(F("IP"), WiFi.localIP().toString());
     reply += F(",\n");
@@ -3534,6 +3654,8 @@ void handle_json()
     reply += to_json_object_value(F("Last Disconnect Reason"), String(lastDisconnectReason));
     reply += F(",\n");
     reply += to_json_object_value(F("Last Disconnect Reason str"), getLastDisconnectReason());
+    reply += F(",\n");
+    reply += to_json_object_value(F("Number reconnects"), String(wifi_reconnects));
     reply += F(",\n");
     reply += to_json_object_value(F("RSSI"), String(WiFi.RSSI()));
     reply += F("\n},\n");
@@ -3594,6 +3716,7 @@ void handle_json()
       if (taskNr == 0 )
         reply += F("]\n}");
 
+  WebServer.sendHeader("Access-Control-Allow-Origin","*");
   WebServer.send(200, "application/json", reply);
 }
 
@@ -3624,6 +3747,7 @@ void handle_advanced() {
   int dstendhour = WebServer.arg(F("dstendhour")).toInt();
   String dst = WebServer.arg(F("dst"));
   String sysloglevel = WebServer.arg(F("sysloglevel"));
+  String syslogfacility = WebServer.arg(F("syslogfacility"));
   String udpport = WebServer.arg(F("udpport"));
   String useserial = WebServer.arg(F("useserial"));
   String serialloglevel = WebServer.arg(F("serialloglevel"));
@@ -3656,6 +3780,7 @@ void handle_advanced() {
     str2ip(syslogip.c_str(), Settings.Syslog_IP);
     Settings.UDPPort = udpport.toInt();
     Settings.SyslogLevel = sysloglevel.toInt();
+    Settings.SyslogFacility = syslogfacility.toInt();
     Settings.UseSerial = (useserial == "on");
     Settings.SerialLogLevel = serialloglevel.toInt();
     Settings.WebLogLevel = webloglevel.toInt();
@@ -3708,6 +3833,7 @@ void handle_advanced() {
 
   addFormIPBox(F("Syslog IP"), F("syslogip"), Settings.Syslog_IP);
   addFormLogLevelSelect(F("Syslog Level"),      F("sysloglevel"),    Settings.SyslogLevel);
+  addFormLogFacilitySelect(F("Syslog Facility"),F("syslogfacility"), Settings.SyslogFacility);
   addFormLogLevelSelect(F("Serial log Level"),  F("serialloglevel"), Settings.SerialLogLevel);
   addFormLogLevelSelect(F("Web log Level"),     F("webloglevel"),    Settings.WebLogLevel);
 
@@ -3751,7 +3877,7 @@ void handle_advanced() {
 
   addFormSeparator(2);
 
-  TXBuffer += F("<TR><TD style='width:150px;' align='left'>");
+  TXBuffer += F("<TR><TD style='width:150px;' align='left'><TD>");
   addSubmitButton();
   TXBuffer += F("<input type='hidden' name='edit' value='1'>");
   TXBuffer += F("</table></form>");
@@ -3803,6 +3929,19 @@ void addLogLevelSelect(String name, int choice)
   String options[6] = { F("None"), F("Error"), F("Info"), F("Debug"), F("Debug More"), F("Debug dev")};
   int optionValues[6] = { 0 , LOG_LEVEL_ERROR, LOG_LEVEL_INFO, LOG_LEVEL_DEBUG, LOG_LEVEL_DEBUG_MORE, LOG_LEVEL_DEBUG_DEV};
   addSelector(name, 6, options, optionValues, NULL, choice, false);
+}
+
+void addFormLogFacilitySelect(const String& label, const String& id, int choice)
+{
+  addRowLabel(label);
+  addLogFacilitySelect(id, choice);
+}
+
+void addLogFacilitySelect(String name, int choice)
+{
+  String options[12] = { F("Kernel"), F("User"), F("Daemon"), F("Message"), F("Local0"), F("Local1"), F("Local2"), F("Local3"), F("Local4"), F("Local5"), F("Local6"), F("Local7")};
+  int optionValues[12] = { 0, 1, 3, 5, 16, 17, 18, 19, 20, 21, 22, 23 };
+  addSelector(name, 12, options, optionValues, NULL, choice, false);
 }
 
 
@@ -4080,19 +4219,19 @@ boolean handle_custom(String path) {
     if (unit && unit != Settings.Unit)
     {
       TXBuffer.startStream();
-      sendHeadandTail(F("TmplStd"),_HEAD);
-      char url[20];
+      sendHeadandTail(F("TmplDsh"),_HEAD);
+      char url[40];
       sprintf_P(url, PSTR("http://%u.%u.%u.%u/dashboard.esp"), Nodes[unit].ip[0], Nodes[unit].ip[1], Nodes[unit].ip[2], Nodes[unit].ip[3]);
       TXBuffer += F("<meta http-equiv=\"refresh\" content=\"0; URL=");
       TXBuffer += url;
       TXBuffer += F("\">");
-      sendHeadandTail(F("TmplStd"),_TAIL);
+      sendHeadandTail(F("TmplDsh"),_TAIL);
       TXBuffer.endStream();
       return true;
     }
 
     TXBuffer.startStream();
-    sendHeadandTail(F("TmplStd"),_HEAD);
+    sendHeadandTail(F("TmplDsh"),_HEAD);
     TXBuffer += F("<script><!--\n"
              "function dept_onchange(frmselect) {frmselect.submit();}"
              "\n//--></script>");
@@ -4194,7 +4333,7 @@ boolean handle_custom(String path) {
       }
     }
   }
-  sendHeadandTail(F("TmplStd"),_TAIL);
+  sendHeadandTail(F("TmplDsh"),_TAIL);
   TXBuffer.endStream();
   return true;
 }
@@ -4492,7 +4631,7 @@ void handle_setup() {
     TXBuffer += F("</h1><BR><BR>Connect your laptop / tablet / phone<BR>back to your main Wifi network and<BR><BR>");
     TXBuffer += F("<a class='button' href='http://");
     TXBuffer += host;
-    TXBuffer += F("/config'>Proceed to main config</a>");
+    TXBuffer += F("/config'>Proceed to main config</a><BR><BR>");
 
     sendHeadandTail(F("TmplAP"),true);
     TXBuffer.endStream();
@@ -4521,7 +4660,6 @@ void handle_setup() {
     strncpy(SecuritySettings.WifiKey, password.c_str(), sizeof(SecuritySettings.WifiKey));
     strncpy(SecuritySettings.WifiSSID, ssid.c_str(), sizeof(SecuritySettings.WifiSSID));
     wifiSetupConnect = true;
-    setWifiState(WifiCredentialsChanged);
     String reconnectlog = F("WIFI : Credentials Changed, retry connection. SSID: ");
     reconnectlog += ssid;
     addLog(LOG_LEVEL_INFO, reconnectlog);
@@ -4529,7 +4667,7 @@ void handle_setup() {
     refreshCount = 0;
   }
 
-  TXBuffer += F("<h1>Wifi Setup wizard</h1><BR>");
+  TXBuffer += F("<BR><h1>Wifi Setup wizard</h1>");
   TXBuffer += F("<form name='frmselect' method='post'>");
 
   if (status == 0)  // first step, scan and show access points within reach...
@@ -4542,31 +4680,34 @@ void handle_setup() {
       TXBuffer += F("No Access Points found");
     else
     {
-      TXBuffer += F("<table class='multirow'><TR><TH>SSID<TH>BSSID<TH>info");
+      TXBuffer += F("<table class='multirow' border=1px frame='box'><TR><TH style='width:50px;'>Pick<TH>Network info");
       for (int i = 0; i < n; ++i)
       {
-        TXBuffer += F("<TR><TD>");
+        TXBuffer += F("<TR><TD><label class='container2'>");
         TXBuffer += F("<input type='radio' name='ssid' value='");
         TXBuffer += WiFi.SSID(i);
         TXBuffer += F("'");
         if (WiFi.SSID(i) == ssid)
           TXBuffer += F(" checked ");
-        TXBuffer += F(">");
-        TXBuffer += formatScanResult(i, "<TD>");
-        TXBuffer += F("</input><br>");
+        TXBuffer += F("><span class='dotmark'></span></label><TD>");
+        TXBuffer += formatScanResult(i, "<BR>");
+        TXBuffer += F("");
       }
       TXBuffer += F("</table>");
     }
 
-    TXBuffer += F("<input type='radio' name='ssid' id='other_ssid' value='other' >other SSID:</input>");
-    TXBuffer += F("<input type ='text' name='other' value='");
+    TXBuffer += F("<BR><label class='container2'>other SSID:<input type='radio' name='ssid' id='other_ssid' value='other' ><span class='dotmark'></span></label>");
+    TXBuffer += F("<input class='wide' type ='text' name='other' value='");
     TXBuffer += other;
-    TXBuffer += F("'><br><br>");
-    TXBuffer += F("Password: <input type ='text' name='pass' value='");
-    TXBuffer += password;
-    TXBuffer += F("'><br>");
+    TXBuffer += F("'><BR><BR>");
 
-    TXBuffer += F("<input type='submit' value='Connect'>");
+    addFormSeparator (2);
+
+    TXBuffer += F("<BR>Password:<BR><input class='wide' type ='text' name='pass' value='");
+    TXBuffer += password;
+    TXBuffer += F("'><BR><BR>");
+
+    addSubmitButton(F("Connect"),F(""));
   }
 
   if (status == 1)  // connecting stage...
@@ -4576,20 +4717,20 @@ void handle_setup() {
       status = 0;
 //      strncpy(SecuritySettings.WifiSSID, "ssid", sizeof(SecuritySettings.WifiSSID));
 //      SecuritySettings.WifiKey[0] = 0;
-      TXBuffer += F("<a class=\"button\" href=\"setup\">Back to Setup</a>");
+      TXBuffer += F("<a class='button' href='setup'>Back to Setup</a><BR><BR>");
     }
     else
     {
       int wait = 20;
       if (refreshCount != 0)
         wait = 3;
-      TXBuffer += F("Please wait for <h1 id=\"countdown\">20..</h1>");
-      TXBuffer += F("<script type=\"text/JavaScript\">");
+      TXBuffer += F("Please wait for <h1 id='countdown'>20..</h1>");
+      TXBuffer += F("<script type='text/JavaScript'>");
       TXBuffer += F("function timedRefresh(timeoutPeriod) {");
       TXBuffer += F("   var timer = setInterval(function() {");
       TXBuffer += F("   if (timeoutPeriod > 0) {");
       TXBuffer += F("       timeoutPeriod -= 1;");
-      TXBuffer += F("       document.getElementById(\"countdown\").innerHTML = timeoutPeriod + \"..\" + \"<br />\";");
+      TXBuffer += F("       document.getElementById('countdown').innerHTML = timeoutPeriod + '..' + '<br />';");
       TXBuffer += F("   } else {");
       TXBuffer += F("       clearInterval(timer);");
       TXBuffer += F("            window.location.href = window.location.href;");
@@ -4647,9 +4788,16 @@ void handle_rules() {
 
   if (WebServer.args() > 0)
   {
+    String log = F("Rules : Save rulesSet: ");
+    log += rulesSet;
+    log += F(" currentSet: ");
+    log += currentSet;
+
     if (currentSet == rulesSet) // only save when the dropbox was not used to change set
     {
       String rules = WebServer.arg(F("rules"));
+      log += F(" rules.length(): ");
+      log += rules.length();
       if (rules.length() > RULES_MAX_SIZE)
         TXBuffer += F("<span style=\"color:red\">Data was not saved, exceeds web editor limit!</span>");
       else
@@ -4666,6 +4814,8 @@ void handle_rules() {
           fs::File f = SPIFFS.open(fileName, "w");
           if (f)
           {
+            log += F(" Write to file: ");
+            log += fileName;
             f.print(rules);
             f.close();
             // flashCount();
@@ -4677,10 +4827,24 @@ void handle_rules() {
     {
       if (!SPIFFS.exists(fileName))
       {
+        log += F(" Create new file: ");
+        log += fileName;
         fs::File f = SPIFFS.open(fileName, "w");
         f.close();
       }
     }
+    addLog(LOG_LEVEL_INFO, log);
+
+    log = F(" Webserver args:");
+    for (int i = 0; i < WebServer.args(); ++i) {
+      log += F(" ");
+      log += i;
+      log += F(": '");
+      log += WebServer.argName(i);
+      log += F("' length: ");
+      log += WebServer.arg(i).length();
+    }
+    addLog(LOG_LEVEL_INFO, log);
   }
 
   if (rulesSet != currentSet)
@@ -4758,7 +4922,11 @@ void handle_sysinfo() {
   addHeader(true,  TXBuffer.buf);
    TXBuffer += printWebString;
    TXBuffer += F("<form>");
-   TXBuffer += F("<table class='normal'><TR><TH style='width:150px;' align='left'>System Info<TH>");
+
+   // the table header
+   TXBuffer += F("<table class='normal'><TR><TH style='width:150px;' align='left'>System Info<TH align='left'>");
+
+   addCopyButton(F("copyText"), F("\\n"), F("Copy info to clipboard") );
 
    TXBuffer += F("<TR><TD>Unit<TD>");
    TXBuffer += Settings.Unit;
@@ -4798,26 +4966,14 @@ void handle_sysinfo() {
    TXBuffer += F(")");
 
    TXBuffer += F("<TR><TD>Boot<TD>");
-  switch (lastBootCause)
-  {
-    case BOOT_CAUSE_MANUAL_REBOOT:
-       TXBuffer += F("Manual reboot");
-      break;
-    case BOOT_CAUSE_DEEP_SLEEP: //nobody should ever see this, since it should sleep again right away.
-       TXBuffer += F("Deep sleep");
-      break;
-    case BOOT_CAUSE_COLD_BOOT:
-       TXBuffer += F("Cold boot");
-      break;
-    case BOOT_CAUSE_EXT_WD:
-       TXBuffer += F("External Watchdog");
-      break;
-  }
+   TXBuffer += getLastBootCauseString();
    TXBuffer += F(" (");
    TXBuffer += RTC.bootCounter;
    TXBuffer += F(")");
 
-   TXBuffer += F("<TR><TD colspan=2><H3>Network</H3></TD></TR>");
+   TXBuffer += F("<TR><TD colspan=2><H3>Network");
+   addHelpButton(F("Wifi"));
+   TXBuffer += F("</H3></TD></TR>");
 
   if (wifiStatus == ESPEASY_WIFI_SERVICES_INITIALIZED)
   {
@@ -4844,6 +5000,8 @@ void handle_sysinfo() {
      TXBuffer += WiFi.RSSI();
      TXBuffer += F(" dB)");
   }
+  TXBuffer += F("<TR><TD>IP config<TD>");
+  TXBuffer += useStaticIP() ? F("Static") : F("DHCP");
 
    TXBuffer += F("<TR><TD>IP / subnet<TD>");
    TXBuffer += formatIP(WiFi.localIP());
@@ -4905,37 +5063,27 @@ void handle_sysinfo() {
   TXBuffer += F("<TR><TD>Last Disconnect Reason<TD>");
   TXBuffer += getLastDisconnectReason();
 
+  TXBuffer += F("<TR><TD>Number reconnects<TD>");
+  TXBuffer += wifi_reconnects;
+
   TXBuffer += F("<TR><TD colspan=2><H3>Firmware</H3></TD></TR>");
 
-  TXBuffer += F("<TR><TD>Build<TD>");
+  TXBuffer += F("<TR><TD id='copyText_1'>Build<TD id='copyText_2'>");
   TXBuffer += BUILD;
   TXBuffer += F(" ");
   TXBuffer += F(BUILD_NOTES);
-  #if defined(ESP8266)
-     TXBuffer += F(" (core ");
-     TXBuffer += ESP.getCoreVersion();
-     TXBuffer += F(")");
-  #endif
 
-   TXBuffer += F("<TR><TD>GIT version<TD>");
-   TXBuffer += BUILD_GIT;
+  TXBuffer += F("<TR><TD id='copyText_3'>Libraries<TD id='copyText_4'>");
+  TXBuffer += getSystemLibraryString();
 
-   TXBuffer += F("<TR><TD>Plugins<TD>");
-   TXBuffer += deviceCount + 1;
+  TXBuffer += F("<TR><TD id='copyText_5'>GIT version<TD id='copyText_6'>");
+  TXBuffer += BUILD_GIT;
 
-  #ifdef PLUGIN_BUILD_NORMAL
-     TXBuffer += F(" [Normal]");
-  #endif
+  TXBuffer += F("<TR><TD id='copyText_7'>Plugins<TD id='copyText_8'>");
+  TXBuffer += deviceCount + 1;
+  TXBuffer += getPluginDescriptionString();
 
-  #ifdef PLUGIN_BUILD_TESTING
-     TXBuffer += F(" [Testing]");
-  #endif
-
-  #ifdef PLUGIN_BUILD_DEV
-     TXBuffer += F(" [Development]");
-  #endif
-
-   TXBuffer += F("<TR><TD>Build Md5<TD>");
+  TXBuffer += F("<TR><TD>Build Md5<TD>");
   for (byte i = 0; i<16; i++)    TXBuffer += String(CRCValues.compileTimeMD5[i],HEX);
 
    TXBuffer += F("<TR><TD>Md5 check<TD>");
@@ -4943,12 +5091,12 @@ void handle_sysinfo() {
      TXBuffer +="<font color = 'red'>fail !</font>";
   else  TXBuffer +="passed.";
 
-   TXBuffer += F("<TR><TD>Build time<TD>");
+   TXBuffer += F("<TR><TD id='copyText_9'>Build time<TD id='copyText_10'>");
    TXBuffer += String(CRCValues.compileDate);
    TXBuffer += " ";
    TXBuffer += String(CRCValues.compileTime);
 
-   TXBuffer += F("<TR><TD>Binary filename<TD>");
+   TXBuffer += F("<TR><TD id='copyText_11'>Binary filename<TD id='copyText_12'>");
    TXBuffer += String(CRCValues.binaryFilename);
 
    TXBuffer += F("<TR><TD colspan=2><H3>ESP board</H3></TD></TR>");
